@@ -13,6 +13,7 @@ import pandas as pd
 import streamlit as st
 from app.service import EngagementService, ServiceError
 from ui.labels import customer_name, ist_time
+from ui.access import require_access
 
 DATA_DIR = Path(__file__).resolve().parents[1] / "datasets" / "telecom_5000"
 SEGMENTS = ("consistent", "loyalty_candidate", "declining_activity", "dormant", "payment_reminder")
@@ -201,6 +202,7 @@ def render_overview() -> None:
 
 def main() -> None:
     st.set_page_config(page_title="Customers", page_icon="◈", layout="wide")
+    require_access(st)
     style_path = Path(__file__).with_name("styles.css")
     st.markdown(f"<style>{style_path.read_text(encoding='utf-8')}</style>", unsafe_allow_html=True)
     st.title("Customers")

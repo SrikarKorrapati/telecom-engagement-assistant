@@ -6,11 +6,11 @@ import json
 import re
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
-from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from app.content import load_content, validate_content
+from app.paths import policy_directory
 
 SEGMENTS = ("consistent", "loyalty_candidate", "declining_activity", "dormant", "payment_reminder")
 
@@ -33,7 +33,7 @@ class EvidenceError(ValueError):
 
 def load_policy() -> dict:
     try:
-        policy = json.loads((Path(__file__).parent / "policies" / "policy.json").read_text())
+        policy = json.loads((policy_directory() / "policy.json").read_text())
         if not isinstance(policy, dict):
             raise ValueError("Policy configuration must be an object.")
         policy["content"] = load_content()

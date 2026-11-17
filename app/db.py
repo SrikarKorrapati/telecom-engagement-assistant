@@ -9,6 +9,9 @@ from app.models import Base
 
 
 def make_engine(url: str) -> Engine:
+    # Render may supply the historical postgres:// scheme; SQLAlchemy uses postgresql.
+    if url.startswith("postgres://"):
+        url = "postgresql+psycopg2://" + url[len("postgres://"):]
     parsed = make_url(url)
     options = {"pool_pre_ping": True}
     if parsed.get_backend_name() == "sqlite":

@@ -11,6 +11,7 @@ import streamlit as st
 
 from app.service import EngagementService, ServiceError
 from ui.labels import customer_name, ist_time
+from ui.access import require_access
 
 
 RUBRIC = {
@@ -380,6 +381,7 @@ def render_add_profile() -> None:
 
 def main() -> None:
     st.set_page_config(page_title="Telecom engagement review", page_icon="✉", layout="wide")
+    require_access(st)
     style_path = Path(__file__).with_name("styles.css")
     if style_path.exists():
         # Only developer-authored CSS is rendered as HTML. Customer content never is.

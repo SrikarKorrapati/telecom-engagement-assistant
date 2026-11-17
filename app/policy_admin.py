@@ -20,11 +20,12 @@ from sqlalchemy import select
 from app.content import validate_content
 from app.models import Offer
 from app.policy import _policy
+from app.paths import policy_directory
 from app.workflow import audit, digest
 
 ROOT = Path(__file__).resolve().parent.parent
-POLICY_PATH = ROOT / "app/policies/policy.json"
-CONTENT_PATH = ROOT / "app/policies/content.json"
+POLICY_PATH = policy_directory() / "policy.json"
+CONTENT_PATH = policy_directory() / "content.json"
 LOCK_PATH = ROOT / ".local/policy-dashboard.lock"
 
 

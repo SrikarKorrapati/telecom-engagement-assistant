@@ -1,0 +1,7 @@
+# Keep the UI APIs used by the existing demo stable during deployment.
+-e .
+streamlit==1.27.2
+altair==5.1.2
+pandas==2.1.1
+numpy==1.26.4
+pyarrow==13.0.0

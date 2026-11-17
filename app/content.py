@@ -1,9 +1,10 @@
 """Current message content and guardrail configuration, frozen with each run."""
 
 import json
-from pathlib import Path
 import re
 from string import Formatter
+
+from app.paths import policy_directory
 
 
 RESPECTFUL_TONES = frozenset({"courteous", "warm", "supportive", "neutral", "direct", "firm"})
@@ -67,7 +68,7 @@ def validate_content(content):
 
 
 def load_content():
-    path = Path(__file__).parent / "policies" / "content.json"
+    path = policy_directory() / "content.json"
     try:
         return validate_content(json.loads(path.read_text(encoding="utf-8")))
     except (OSError, json.JSONDecodeError) as error:

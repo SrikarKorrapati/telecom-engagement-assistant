@@ -27,6 +27,10 @@ See [the implemented architecture and stack](docs/ARCHITECTURE.md) for the conne
 
 ## Start locally
 
+For the protected hosted demo, see [Deploy on Render](docs/RENDER_DEPLOYMENT.md).
+The Blueprint provisions PostgreSQL and persistent policy storage; hosted access
+requires the generated demo password.
+
 Requirements: Python 3.11+, PostgreSQL 16 binaries, and the project dependencies. The local launcher defaults to the PostgreSQL installation at `/Library/PostgreSQL/16/bin`; set `PG_BINDIR` for another installation. Docker is optional and is not required.
 
 ```sh
