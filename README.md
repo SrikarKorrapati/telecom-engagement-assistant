@@ -2,13 +2,13 @@
 
 A local prototype that assembles synthetic customer evidence, evaluates five independent segments, chooses an illustrative engagement strategy, drafts a message, and requires approval of the exact revision before recording a mock delivery.
 
-The application uses Streamlit, a direct Python application service, and SQLAlchemy/PostgreSQL. Streamlit calls `EngagementService` in its server process, so no separate API server is needed. OpenAI drafting uses a generator–critic loop: the generator writes courtesy wording and the independent critic assesses the complete message, feeding required corrections back for up to three attempts. The policy engine chooses segments, strategy, eligibility, and reminder stage. Customer feedback is available as context, with no separate sentiment-analysis workflow. An explicitly labelled offline template demo works without an API key.
+The application uses Streamlit, a direct Python application service, and SQLAlchemy/PostgreSQL. Streamlit calls `EngagementService` in its server process, so no separate API server is needed. OpenAI drafting uses a generator–critic loop: the generator writes the complete email subject and body and the independent critic assesses the complete message, feeding required corrections back for up to three attempts. The policy engine chooses segments, strategy, eligibility, and reminder stage. Customer feedback is available as context, with no separate sentiment-analysis workflow. Internal scripts retain an explicit offline template mode for testing without an API key.
 
 **This is a synthetic, single-user prototype. All delivery is mocked. No customer is contacted, no offer is provisioned, and no billing account is changed.**
 
 ## Open the prepared application
 
-This workspace's native PostgreSQL demo contains 5,000 synthetic customers and an initial 5,000 policy evaluations. Open the [reviewer dashboard](http://127.0.0.1:8501) to inspect an evaluation and draft/review a message, or the [data dashboard](http://127.0.0.1:8502) to explore the dataset. If the services are stopped, reuse the existing database without reimporting:
+This workspace's native PostgreSQL demo contains 5,000 synthetic customers and an initial 5,000 policy evaluations. Open the [reviewer dashboard](http://127.0.0.1:8501) to inspect an evaluation and draft/review a message, or the [data dashboard](http://127.0.0.1:8502) to search customers and view their basic details. If the services are stopped, reuse the existing database without reimporting:
 
 ```sh
 ./scripts/start_local.sh --skip-load --dataset-dashboard
@@ -21,7 +21,7 @@ OPENAI_MODEL=gpt-6-astra
 OPENAI_REASONING_EFFORT=high
 ```
 
-OpenAI is the default draft provider when configured; the reviewer explicitly starts each generation. Generator and critic use the configured model and reasoning settings with separate system prompts. OpenAI generation makes up to six requests (three generator/critic pairs); rule failures skip the critic, and API errors stop the loop. With OpenAI configured, template drafts and human edits also receive one AI critique. Without a key/model, the template demo runs only local checks and displays that no AI critique occurred. Classification and strategy remain deterministic.
+AI drafting is the only generation option in the reviewer; the user explicitly starts each generation. Generator and critic use the configured model and reasoning settings with separate system prompts. OpenAI generation makes up to six requests (three generator/critic pairs); rule failures skip the critic, and API errors stop the loop. With OpenAI configured, template drafts and human edits also receive one AI critique. Without a key/model, the reviewer disables email generation; offline scripts can still run template checks. Classification and strategy remain deterministic.
 
 See [the implemented architecture and stack](docs/ARCHITECTURE.md) for the connections and loop. The new content/prompt configuration requires a fresh evaluation before older runs can draft or deliver; their saved history remains readable.
 
@@ -114,11 +114,13 @@ Use **Add profile** to download a fresh synthetic example, edit its JSON evidenc
 
 Reviewers may optionally score **relevance, clarity, personalization, call to action, and tone** when approving or rejecting a draft. All five scores must be integers from 1 (unusable) to 5 (excellent), or the score object must be empty. Scores remain attached to the exact reviewed revision. The overview reports human and automated judgments separately and does not turn missing human ratings into zeros. `EngagementService.rubric()` returns the rubric and `evaluation_summary()` returns the aggregates. Repeated judgments count only the latest judgment per revision and source. Review source is declared by the local caller; authenticated reviewer identity is still production roadmap work.
 
-Select a customer, create an evaluation, inspect every independent segment result and its supporting evidence, then review the chosen strategy. For an actionable strategy, generate a template or OpenAI draft. Every generator attempt is a saved revision. The critic's findings feed the next generator attempt until both rules and critique pass or the attempt limit is reached. Unresolved findings block approval. The reviewer can edit, reject, or approve; edits invalidate both prior approval and critique and receive a new assessment when configured. A final delivery attempt rechecks current evidence, permissions, eligibility, duplicates, the saved exact-message critique, and approval before recording a mock outcome. Critic errors can be retried with **Run AI critique**; **Regenerate with critique** starts a new bounded cycle using the current findings. Human edits are critiqued once and never silently rewritten.
+The reviewer opens with **Ready for demo**, a read-only selection of current eligible, uncontacted examples. Switch to **All customers** to inspect intentional refusal cases or completed outreach. Re-evaluating a completed local action opens its original delivery without sending again. See [hold investigation](docs/HOLD_EXPERIENCE.md) for measured causes and changes.
+
+Select a customer, create an evaluation, inspect every independent segment result and its supporting evidence, then review the chosen strategy. For an actionable strategy, click **Generate email** for a complete AI-written subject and body. Every generator attempt is a saved revision. The critic's findings feed the next generator attempt until both rules and critique pass or the attempt limit is reached. Unresolved findings block approval. The reviewer can edit, reject, or approve; edits invalidate both prior approval and critique and receive a new assessment when configured. A final delivery attempt rechecks current evidence, permissions, eligibility, duplicates, the saved exact-message critique, and approval before recording a mock outcome. Critic errors can be retried with **Run AI critique**; **Regenerate email** starts a new bounded cycle using the current findings. Human edits are critiqued once and never silently rewritten.
 
 Billing takes precedence over discretionary engagement. All of the following are illustrative policy conditions:
 
-- **IF** a verified invoice has a positive outstanding balance and its due date is before today, select a billing reminder, provided no reminder was already sent for that invoice and contact checks pass.
+- **IF** a verified invoice has a positive outstanding balance and its due date is before today, select a billing reminder, provided the next configured stage is due, prior stages have matching delivery evidence, and contact checks pass.
 - **ELSE IF** loyalty, dormancy, or declining activity matches and a valid approved offer is eligible, select an offer/reward.
 - **ELSE IF** the active customer is consistent, has no dormancy/decline match, and no eligibility uncertainty remains, select appreciation without an offer.
 - Missing, stale, disputed, conflicting, or disallowed evidence can hold the affected outreach. Otherwise select no outreach.
@@ -166,9 +168,9 @@ PostgreSQL provides transactions, row locking, relational identities, JSONB, and
 | FR-01 | Assemble minimal selected-customer context with source timestamps and references. |
 | FR-02 | Evaluate consistent, loyalty candidate, declining activity, dormant, and payment-reminder segments independently. |
 | FR-03 | Resolve overlap through explicit policy priority and select objective/tone. |
-| FR-04 | Produce a grounded subject/body using a declared template or optional OpenAI provider. |
+| FR-04 | Generate a grounded subject and body directly with an LLM and a system prompt. |
 | FR-05 | Verify catalogue version, plan eligibility, value, terms, expiry, channel, and redemption history. |
-| FR-06 | Verify an unpaid overdue bill and send at most one courteous reminder per invoice. |
+| FR-06 | Verify an unpaid overdue bill and progress through configured stages using verified history, timing and duplicate protection per stage. |
 | FR-07 | Run deterministic checks and an independent LLM critique; feed findings back to the generator within the bounded loop. |
 | FR-08 | Show evidence and draft, collect review feedback, and bind approval to the current revision. |
 | FR-09 | Record workflow evidence, policy/provider versions, reviews, and mock outcomes. |
@@ -180,13 +182,13 @@ The complete submission materials are indexed in [the submission checklist](docs
 
 ## Current policy and structured output
 
-Open **Policies** in the sidebar, or [the policy dashboard](http://localhost:8501/?page=policies), to inspect and edit segment thresholds, contact controls, offers, reminder stages, and message content. Each tab shows a short summary; editing controls and technical details are expandable. [Dashboard guide](docs/POLICY_DASHBOARD.md).
+Open **Policies** in the sidebar, or [the policy dashboard](http://localhost:8501/?page=policies), to inspect and edit the exposed segment, contact and offer controls. Reminder progression remains configured in `app/policies/policy.json`; approved wording and safety settings remain in `app/policies/content.json`. Each tab shows a short summary; editing controls and technical details are expandable. [Dashboard guide](docs/POLICY_DASHBOARD.md).
 
 Saving policy or content requires a new version, validates the complete configuration, and rejects changes made from an outdated view. Offer edits create a new catalogue version and retire earlier active versions of the same offer code. Saves are recorded in the audit table. Existing evaluations keep their original snapshots; create a fresh evaluation after configuration changes.
 
 `app/policies/policy.json` is the single current policy; `app/policies/content.json` contains current templates, prompts and validation settings. Save changes in place from **Policies** without entering a new version number. See [the simple decision rules](docs/SIMPLE_RULES.md) for the five outcomes and segment definitions.
 
-Consistency uses the latest completed bill, loyalty uses active status and tenure, decline means any positive decrease in usage, and dormancy means zero usage. Billing sends one courteous reminder per overdue invoice, without escalation. Permission, evidence, dispute, offer eligibility, contact-frequency and duplicate checks still apply.
+Consistency uses the latest completed bill, loyalty uses active status and tenure, decline means any positive decrease in usage, and dormancy means zero usage. Billing advances through configured courteous, direct and firm stages only with verified prior delivery and elapsed timing limits. Permission, evidence, dispute, offer eligibility, contact-frequency and duplicate checks still apply.
 
 Each evaluation freezes its evidence and configuration. Full content hashes detect changes even though the policy name stays fixed. Changed settings require a new evaluation before drafting, editing, critique, approval or delivery. Outdated edit forms are rejected. Dashboard saves wait for in-progress service actions. Old evaluations, approvals and audit records remain readable. Appreciation deduplication uses customer/month rather than the policy name and recognizes older delivery keys.
 
@@ -195,19 +197,19 @@ The bundled dataset's expected labels and earlier evaluation reports are histori
 The model uses Responses Structured Outputs with the following Pydantic contract:
 
 ```python
-class CourtesyCopy(BaseModel):
+class EmailDraft(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    opening: str = Field(min_length=1, max_length=240)
-    closing: str = Field(min_length=1, max_length=240)
+    subject: str = Field(min_length=1, max_length=160)
+    body: str = Field(min_length=1, max_length=6000)
 ```
 
 Example output, shown for the schema rather than as an evaluation result:
 
 ```json
-{"opening":"We would like to share an offer for your mobile plan.","closing":"Thank you for being our customer."}
+{"subject":"A note from Customer Care","body":"Hello customer,\n\n...complete email...\n\nCustomer Care"}
 ```
 
-The generator's first request contains only the selected objective and tone. Repairs additionally receive critic findings, failed rule descriptions, and the previous generated courtesy copy when it passed rule checks. The subject, greeting, invoice amount/date, offer identifiers/terms/expiry, required statements and signature are assembled by deterministic code from verified evidence and approved content.
+The generator receives the selected purpose, tone and verified required lines, and returns the entire email subject and body. The application validates that output rather than assembling it from template openings and closings. Repairs receive critic findings, failed rule descriptions and the previous draft when it passed rule checks. Only **Generate email** is exposed in the reviewer; there is no provider selector, Reminders tab or Messages editor. Explicit offline template generation remains available to internal scripts and fixtures.
 
 The critic receives the complete draft with the customer name replaced by `[customer]`, selected objective/tone, and only the selected verified message facts. It does not receive the full customer context, feedback, email address, account/subscription identifiers, or the complete offer catalogue. Failed deterministic checks prevent sending a draft to the critic. Its structured response contains `verdict` (`pass` or `revise`), a summary, and findings with category, severity, quote, explanation and suggested fix. A revise verdict requires a blocking finding; a pass cannot contain one.
 

@@ -2,7 +2,9 @@
 
 > Historical walkthrough for the original dataset and rules. Current decisions follow [Simple rules](SIMPLE_RULES.md); fresh evaluations can differ from the examples below.
 
-This walkthrough uses the shipped 5,000-customer synthetic fixture. It demonstrates actual application behavior, independent segment overlap, controlled drafting, human review, and mock delivery. The six scenarios below use the **second fixture record** in each scenario, with concrete stable IDs for seed `20261117`. The first appreciation, loyalty, and billing records have already been mock-delivered during application smoke checks and can correctly hit duplicate/contact-frequency controls.
+For the current demo, start with **Ready for demo**, choose an eligible example, then **Evaluate customer**. The picker skips recorded outreach; **All customers** retains the refusal examples. Completed local outreach reopens as a successful mock delivery, and **Choose another eligible customer** continues the demo.
+
+This historical walkthrough uses the shipped 5,000-customer synthetic fixture. It demonstrates actual application behavior, independent segment overlap, controlled drafting, human review, and mock delivery. The six scenarios below use the **second fixture record** in each scenario, with concrete stable IDs for seed `20261117`. The first appreciation, loyalty, and billing records have already been mock-delivered during application smoke checks and can correctly hit duplicate/contact-frequency controls.
 
 ## Preparation
 
@@ -12,7 +14,7 @@ Open the reviewer at [localhost:8501](http://127.0.0.1:8501), and the data explo
 ./scripts/start_local.sh --skip-load --dataset-dashboard
 ```
 
-Use the local template provider for a reproducible, zero-API-call demonstration. Optional OpenAI generation uses the configured `gpt-6-astra` model with high reasoning; it is a distinct provider and must be labelled accordingly. The main benchmark measures templates and local provider stubs. A separate six-call live sample produced five accepted drafts and one validation rejection; it is not a population-level OpenAI quality estimate. The failed call remains visible and was not retried to improve the score.
+Isolated deterministic tests use a service with no model key for a reproducible, zero-API-call demonstration. In the configured live UI, both template and AI drafts require AI critique and can make paid calls. Optional OpenAI generation uses the configured `gpt-6-astra` model with high reasoning; it is a distinct provider and must be labelled accordingly. The main benchmark measures templates and local provider stubs. A separate six-call live sample produced five accepted drafts and one validation rejection; it is not a population-level OpenAI quality estimate. The failed call remains visible and was not retried to improve the score.
 
 **Create a fresh evaluation for every selected customer before drafting.** Existing evaluations created before content-policy configuration was added carry an older policy hash and are intentionally blocked before generation. Do not use those historical runs for a current-action demonstration.
 
@@ -20,7 +22,7 @@ The fixture reference time is `2026-11-17T06:30:00+00:00`. Current-time evaluati
 
 If a selected customer has since been demonstrated and delivered, choose another uncontacted record among the 200 records for that scenario and create a fresh evaluation. Never remove delivery history to force eligibility.
 
-Show the dataset explorer first: 5,000 synthetic records, 25 scenarios, missing values visibly distinct from zero, and overlapping independent segments. Expected labels are a separate fixture file; the reviewer uses actual policy evaluation.
+Show the customer page first: search the 5,000 synthetic records, choose a customer, and view their plan, stored strategy, recent activity and outstanding balance. Missing values remain distinct from zero. Stored strategy labels are fixture expectations; the reviewer uses actual policy evaluation.
 
 ## 1. Consistent customer → appreciation
 
@@ -50,7 +52,7 @@ Select **Synthetic Customer 00028**, scenario `decline_offer`.
 
 Customer ID: `39ab2194-174e-5f36-8654-121f4550a4ef`.
 
-Open the customer's prior/current usage in the dataset explorer. Both windows are complete, prior activity exceeds the minimum baseline, and current activity is positive but at most 60% of prior. `declining_activity` matches; `dormant` does not. The customer can be consistent without qualifying for the tenure-based loyalty segment.
+Open the customer's evidence in the reviewer. Both windows are complete, prior activity exceeds the minimum baseline, and current activity is positive but at most 60% of prior. `declining_activity` matches; `dormant` does not. The customer can be consistent without qualifying for the tenure-based loyalty segment.
 
 Strategy: `offer_or_reward` because a qualifying segment and all offer controls match. Show that the outcome comes from the usage and catalogue rules; the system does not infer churn or mood from the scenario label or feedback wording.
 

@@ -52,7 +52,7 @@ def _integer(value, name, minimum=1, maximum=10000):
 def validate_configuration(policy, content):
     """Validate both documents together so reminder rules and copy stay compatible."""
     _keys(policy, ("version", "label", "example_policy", "billing_timezone", "max_source_age_hours",
-                   "clock_skew_seconds", "segments", "outreach", "offer"), "Policy")
+                   "clock_skew_seconds", "segments", "outreach", "offer", "reminders"), "Policy")
     for value, name, limit in ((policy["version"], "Policy version", 80), (policy["label"], "Policy label", 200)):
         _text(value, name, limit)
     if policy["example_policy"] is not True:

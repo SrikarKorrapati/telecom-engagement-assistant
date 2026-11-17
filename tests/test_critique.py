@@ -7,7 +7,7 @@ from app.config import Settings
 from app.critique import CritiqueResult
 from app.db import initialize_database, make_engine, make_session_factory
 from app.service import EngagementService, ServiceError
-from app.messages import CourtesyCopy
+from app.messages import EmailDraft
 from app.models import MessageRevision
 from app.seed import demo_id, seed_demo
 PASS = {'verdict': 'pass', 'summary': 'The message is grounded, clear and respectful.', 'findings': []}
@@ -33,7 +33,7 @@ def exchange(monkeypatch):
 
         def parse(self, **kwargs):
             state.calls.append(kwargs)
-            is_generator = kwargs['text_format'] is CourtesyCopy
+            is_generator = kwargs['text_format'] is EmailDraft
             assert is_generator or kwargs['text_format'] is CritiqueResult
             queue = state.generations if is_generator else state.critiques
             value = queue.pop(0) if queue else deepcopy(COPY if is_generator else PASS)
@@ -41,6 +41,9 @@ def exchange(monkeypatch):
                 raise value
             if isinstance(value, SimpleNamespace):
                 return value
+            if is_generator and "opening" in value:
+                lines = json.loads(kwargs['input'][1]['content'])['required_lines']
+                value = {'subject': 'A personal note from Customer Care', 'body': '\n\n'.join([lines[0], value['opening'], *lines[1:-1], value['closing'], lines[-1]])}
             return SimpleNamespace(status='completed', output=[], model='test-resolved-model', output_parsed=value)
     monkeypatch.setattr(openai, 'OpenAI', Client)
     return state
@@ -64,7 +67,7 @@ def generate(client, provider='openai', scenario='billing'):
     return client.draft(run['id'], provider=provider)
 
 def roles(exchange):
-    return ['generator' if request['text_format'] is CourtesyCopy else 'critic' for request in exchange.calls]
+    return ['generator' if request['text_format'] is EmailDraft else 'critic' for request in exchange.calls]
 
 def test_generator_critic_loop_repairs_and_preserves_every_attempt(client, exchange):
     exchange.generations = [{'opening': 'You may regret overlooking this.', 'closing': COPY['closing']}, COPY]
@@ -78,7 +81,7 @@ def test_generator_critic_loop_repairs_and_preserves_every_attempt(client, excha
     assert second['validation']['passed']
     assert second['validation']['generation_attempt'] == 2
     feedback = json.loads(exchange.calls[2]['input'][1]['content'])['revision_feedback']
-    assert feedback['previous_courtesy_copy']['opening'] == 'You may regret overlooking this.'
+    assert 'You may regret overlooking this.' in feedback['previous_draft']['body']
     assert feedback['findings'][0]['suggested_fix'] == REVISE['findings'][0]['suggested_fix']
     assert first['content_hash'] != second['content_hash']
     assert not run['reviews'] and (not run['deliveries'])

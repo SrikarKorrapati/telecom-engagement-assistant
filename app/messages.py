@@ -1,4 +1,4 @@
-"""Fixed verified facts with optional, bounded OpenAI courtesy wording."""
+"""Complete AI email drafts grounded in verified customer facts."""
 
 from datetime import datetime, timezone
 from copy import deepcopy
@@ -13,10 +13,10 @@ from app.content import content_for
 OBJECTIVES = {"billing_reminder", "offer_or_reward", "appreciation_without_offer"}
 
 
-class CourtesyCopy(BaseModel):
+class EmailDraft(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    opening: str = Field(min_length=1, max_length=240)
-    closing: str = Field(min_length=1, max_length=240)
+    subject: str = Field(min_length=1, max_length=160)
+    body: str = Field(min_length=1, max_length=6000)
 
 
 def _line(value, label):
@@ -95,13 +95,14 @@ def message_spec(snapshot, strategy):
             "signature": signature, "opening": opening, "closing": closing, "content_policy": content}
 
 
-def _model_copy(strategy, settings, content, feedback=None):
+def _model_email(strategy, settings, content, spec, feedback=None):
     if settings is None:
         from app.config import Settings
         settings = Settings.from_env()
     if not settings.openai_configured:
         raise ValueError("OpenAI generation requires a server-side API key and an explicitly configured model.")
-    request = {"purpose": strategy["objective"], "tone": strategy.get("tone")}
+    request = {"purpose": strategy["objective"], "tone": strategy.get("tone"),
+               "required_lines": [spec["greeting"], *spec["facts"], spec["action"], spec["signature"]]}
     if feedback:
         request["revision_feedback"] = feedback
     try:
@@ -112,7 +113,7 @@ def _model_copy(strategy, settings, content, feedback=None):
                 store=False,
                 max_output_tokens=4096,
                 reasoning={"effort": settings.openai_reasoning_effort},
-                text_format=CourtesyCopy,
+                text_format=EmailDraft,
                 input=[
                     {"role": "system", "content": content["generation"]["system_prompt"]},
                     {"role": "user", "content": json.dumps(request)},
@@ -128,12 +129,12 @@ def _model_copy(strategy, settings, content, feedback=None):
     if getattr(response, "status", None) != "completed":
         raise ValueError("OpenAI generation was incomplete; no draft was created.")
     try:
-        copy = CourtesyCopy.model_validate(response.output_parsed)
-        if any("\n" in value or "\r" in value for value in (copy.opening, copy.closing)):
+        draft = EmailDraft.model_validate(response.output_parsed)
+        if "\n" in draft.subject or "\r" in draft.subject:
             raise ValueError()
     except Exception:
-        raise ValueError("OpenAI did not return valid bounded courtesy wording; no draft was created.") from None
-    return copy.opening.strip(), copy.closing.strip(), getattr(response, "model", None) or settings.openai_model
+        raise ValueError("OpenAI did not return a valid email; no draft was created.") from None
+    return draft.subject.strip(), draft.body.strip(), getattr(response, "model", None) or settings.openai_model
 
 
 def generate_message(snapshot, strategy, provider="template", settings=None, *, feedback=None, allow_invalid=False):
@@ -144,19 +145,21 @@ def generate_message(snapshot, strategy, provider="template", settings=None, *, 
     snapshot = {**snapshot, "content_policy": deepcopy(content_for(snapshot))}
     spec = message_spec(snapshot, strategy)
     content = spec["content_policy"]
-    opening, closing, model = spec["opening"], spec["closing"], "none"
+    subject, model = spec["subject"], "none"
     if provider == "openai":
-        opening, closing, model = _model_copy(strategy, settings, content, feedback)
-    paragraphs = [spec["greeting"], opening]
-    if spec["facts"]:
-        paragraphs.append("\n".join(spec["facts"]))
-    paragraphs.extend([spec["action"], closing, spec["signature"]])
-    body = "\n\n".join(paragraphs)
+        subject, body, model = _model_email(strategy, settings, content, spec, feedback)
+    else:
+        # Explicit offline support for fixtures and scripts; not exposed in the UI.
+        paragraphs = [spec["greeting"], spec["opening"]]
+        if spec["facts"]:
+            paragraphs.append("\n".join(spec["facts"]))
+        paragraphs.extend([spec["action"], spec["closing"], spec["signature"]])
+        body = "\n\n".join(paragraphs)
     from app.validation import validate_message
-    findings = validate_message(spec["subject"], body, snapshot, strategy)
+    findings = validate_message(subject, body, snapshot, strategy)
     if not findings["passed"] and not allow_invalid:
-        raise ValueError("Generated wording failed validation; no draft was created. Choose template generation or retry.")
-    return {"subject": spec["subject"], "body": body, "provider": provider, "model_version": model,
+        raise ValueError("Generated wording failed validation; no draft was created. Please retry.")
+    return {"subject": subject, "body": body, "provider": provider, "model_version": model,
             "prompt_version": content["generation"]["prompt_version"] if provider == "openai" else "none",
             "template_version": content["version"], "content_version": content["version"],
-            "courtesy_copy": {"opening": opening, "closing": closing}}
+            "draft": {"subject": subject, "body": body}}

@@ -10,6 +10,7 @@ from typing import Any, Callable
 import streamlit as st
 
 from app.service import EngagementService, ServiceError
+from ui.labels import customer_name, ist_time
 
 
 RUBRIC = {
@@ -27,6 +28,12 @@ STATE_LABELS = {
     "rejected": "Rejected",
     "delivered": "Mock delivery recorded",
 }
+
+
+def state_label(run: dict[str, Any]) -> str:
+    if (run.get("strategy") or {}).get("reason_code") in {"outreach_completed", "duplicate_outreach"}:
+        return "Previously delivered"
+    return STATE_LABELS.get(run.get("state"), human(run.get("state")))
 
 
 @st.cache_resource(show_spinner=False)
@@ -63,6 +70,8 @@ def mutate(operation: Callable[[], dict[str, Any]], message: str, *, opens_run: 
     else:
         if opens_run and isinstance(result, dict) and result.get("id"):
             st.session_state["active_run_id"] = result["id"]
+        if message == "Evaluation ready." and result.get("state") == "delivered":
+            message = "Opened the completed mock delivery. No new message was sent."
         flash("success", message)
     # Fetch fresh state even on a rejected mutation: a final gate may have held it.
     st.rerun()
@@ -101,7 +110,7 @@ def render_decision(run: dict[str, Any]) -> None:
         st.write("**Segments:** " + " · ".join(human(item.get("segment")) for item in matched))
     elif not segments:
         st.info("No segment results yet.")
-    with st.expander("Classification reasons and evidence"):
+    with st.expander("Classification reasons and evidence", expanded=True):
         st.dataframe(
             [{"Segment": human(item.get("segment")), "Result": human(item.get("status")),
               "Reason": item.get("reason", "")} for item in segments],
@@ -163,20 +172,19 @@ def render_message(run: dict[str, Any], config: dict[str, Any]) -> None:
     latest_id = run.get("latest_revision_id")
     if not revisions:
         if state in TERMINAL_STATES:
-            st.info("Drafting is blocked. Resolve the reason and evaluate again.")
+            if (run.get("strategy") or {}).get("reason_code") in {"outreach_completed", "duplicate_outreach"}:
+                st.info("Previous outreach is recorded. Choose another eligible customer to prepare a new demo message.")
+            elif state == "no_outreach":
+                st.info("No message is needed for this evaluation. Choose another eligible customer to continue.")
+            else:
+                st.info("Drafting is blocked. Resolve the reason or choose another eligible customer.")
             return
-        providers = ["openai", "template"] if config.get("openai_configured") is True else ["template"]
-        provider = st.selectbox(
-            "Draft provider",
-            providers,
-            format_func=lambda value: (
-                ("Template + AI review" if critique_enabled else "Template") if value == "template" else "AI draft"
-            ),
-            key=f"provider-{run_id}",
-        )
-        if st.button("Generate draft", type="primary", key=f"draft-{run_id}"):
-            with st.spinner("Preparing draft…"):
-                mutate(lambda: get_service().draft(run_id, provider=provider), "Draft generation finished.")
+        configured = config.get("openai_configured") is True
+        if not configured:
+            st.info("Configure the server's OpenAI API key and model to generate an AI draft.")
+        if st.button("Generate email", type="primary", disabled=not configured, key=f"draft-{run_id}"):
+            with st.spinner("Writing your email…"):
+                mutate(lambda: get_service().draft(run_id, provider="openai"), "AI draft ready.")
         return
 
     by_id = {item["id"]: item for item in revisions}
@@ -193,7 +201,7 @@ def render_message(run: dict[str, Any], config: dict[str, Any]) -> None:
     latest = revision_id == latest_id
     st.text_input("Email subject", value=revision.get("subject", ""), disabled=True, key=f"subject-preview-{revision_id}")
     st.text_area("Email body", value=revision.get("body", ""), height=240, disabled=True, key=f"body-preview-{revision_id}")
-    passed = render_validation(revision, critique_required=critique_enabled)
+    passed = render_validation(revision, critique_required=critique_enabled) if state != "delivered" else False
     with st.expander("Revision identity"):
         st.text(f"Revision ID: {revision_id}\nContent hash: {revision.get('content_hash', 'Not recorded')}")
 
@@ -207,7 +215,7 @@ def render_message(run: dict[str, Any], config: dict[str, Any]) -> None:
                 st.write(title)
                 st.dataframe(
                     [{"Action": human(item.get("action")), "Reviewer": item.get("actor", ""),
-                      "Feedback": item.get("feedback", ""), "Time": item.get("created_at", ""),
+                      "Feedback": item.get("feedback", ""), "Time": ist_time(item.get("created_at")),
                       **{label: f"{item['scores'][key]} / 5" if key in (item.get("scores") or {}) else "Not scored" for key, label in RUBRIC.items()}}
                      for item in group],
                     use_container_width=True, hide_index=True,
@@ -247,7 +255,7 @@ def render_message(run: dict[str, Any], config: dict[str, Any]) -> None:
             with st.spinner("Reviewing draft…"):
                 mutate(lambda: get_service().critique(revision_id), "AI review complete.")
     if state == "validation_failed" and critique_enabled:
-        if st.button("Regenerate with critique", key=f"regenerate-{revision_id}"):
+        if st.button("Regenerate email", key=f"regenerate-{revision_id}"):
             with st.spinner("Revising draft…"):
                 mutate(lambda: get_service().draft(run_id, provider="openai"), "New draft ready for review.")
 
@@ -288,7 +296,7 @@ def render_audit(run: dict[str, Any]) -> None:
     if deliveries:
         st.dataframe(
             [{"Status": human(item.get("status")), "Message revision": item.get("message_id", ""),
-              "Created": item.get("created_at", ""), "Delivered": item.get("delivered_at") or "Not delivered"}
+              "Created": ist_time(item.get("created_at")), "Delivered": ist_time(item.get("delivered_at"), "Not delivered")}
              for item in deliveries], use_container_width=True, hide_index=True,
         )
         with st.expander("Delivery details"):
@@ -301,42 +309,12 @@ def render_audit(run: dict[str, Any]) -> None:
         st.info("No activity yet.")
         return
     st.dataframe(
-        [{"Time": event.get("created_at", ""), "Event": human(event.get("event_type")), "Actor": event.get("actor", "")}
+        [{"Time": ist_time(event.get("created_at")), "Event": human(event.get("event_type")), "Actor": event.get("actor", "")}
          for event in events], use_container_width=True, hide_index=True,
     )
     for index, event in enumerate(events):
         with st.expander(f"{index + 1}. {human(event.get('event_type'))}"):
             show_json(event.get("details"))
-
-
-def render_evaluation_summary() -> None:
-    st.subheader("Message usefulness")
-    try:
-        summary = get_service().evaluation_summary()
-    except ServiceError as exc:
-        st.info(f"Usefulness summary is unavailable. {exc}")
-        return
-    if not isinstance(summary, dict):
-        st.info("Usefulness summary is unavailable.")
-        return
-    human_column, automated_column = st.columns(2)
-    for column, source, title in ((human_column, "human", "Human review"), (automated_column, "automated", "Automated review")):
-        with column:
-            st.write(title)
-            results = summary.get(source)
-            if not isinstance(results, dict):
-                st.caption("No scores yet.")
-                continue
-            st.caption(f"{results.get('reviews', 0)} reviews · {results.get('scored_reviews', 0)} scored")
-            if not results.get("scored_reviews"):
-                st.info(f"No {source}-scored reviews yet.")
-                continue
-            means = results.get("mean_scores") or {}
-            st.dataframe(
-                [{"Criterion": title, "Mean score": f"{means[key]:.2f} / 5" if isinstance(means.get(key), (int, float)) else "Not scored"}
-                 for key, title in RUBRIC.items()], use_container_width=True, hide_index=True,
-            )
-    st.caption(f"Unscored reviews: {summary.get('unscored_reviews', 0)}")
 
 
 def parse_profile_context(value: str) -> dict[str, Any]:
@@ -365,7 +343,7 @@ def render_add_profile() -> None:
     st.download_button("Download complete synthetic example", json.dumps(example, indent=2), file_name="synthetic-profile-example.json", mime="application/json")
     with st.form("add-profile-form"):
         first, second = st.columns(2)
-        name = first.text_input("Fictional customer name", value=example.get("name") or "Synthetic New Customer")
+        name = first.text_input("Fictional customer name", value=customer_name(example.get("name")) if example.get("name") else "New Customer")
         email = second.text_input("Fictional email", value=example.get("email") or "synthetic.profile@example.com")
         scenario = st.text_input("Scenario label (optional)", value=example.get("scenario") or "custom_synthetic")
         context_json = st.text_area("Customer context (JSON)", value=json.dumps(example["context"], indent=2), height=420)
@@ -400,70 +378,6 @@ def render_add_profile() -> None:
             st.rerun()
 
 
-def render_overview() -> None:
-    st.header("Overview")
-    try:
-        dashboard = get_service().dashboard()
-    except ServiceError as exc:
-        st.warning(f"The dashboard is unavailable. {exc}")
-        st.caption("Customer review remains available from the sidebar.")
-        if st.button("Retry dashboard"):
-            st.rerun()
-        return
-    if not isinstance(dashboard, dict):
-        st.warning("The dashboard response is unavailable. Refresh to try again.")
-        return
-    counts = dashboard.get("counts") or {}
-    metrics = [
-        ("Customers", "customers"), ("Awaiting review", "awaiting_review"),
-        ("Approved", "approved"), ("Evaluations", "runs"),
-        ("On hold", "held"), ("Mock deliveries", "delivered"),
-    ]
-    for start in (0, 3):
-        for column, (label, field) in zip(st.columns(3), metrics[start:start + 3]):
-            column.metric(label, counts.get(field, 0))
-    st.caption("All evaluations · Mock delivery")
-
-    segments_column, strategies_column = st.columns(2)
-    with segments_column:
-        st.subheader("Customer segments")
-        st.caption("Latest evaluation · Segments may overlap")
-        segment_rows = records(dashboard.get("segments"))
-        if segment_rows:
-            st.bar_chart(
-                [{"Segment": human(item.get("segment")), "Customers": item.get("count", 0)} for item in segment_rows],
-                x="Segment", y="Customers", color="#167C6B", height=280,
-            )
-        else:
-            st.info("No segment results yet.")
-    with strategies_column:
-        st.subheader("Selected strategies")
-        st.caption("Latest evaluation per customer")
-        strategy_rows = records(dashboard.get("strategies"))
-        if strategy_rows:
-            st.bar_chart(
-                [{"Strategy": human(item.get("objective")), "Customers": item.get("count", 0)} for item in strategy_rows],
-                x="Strategy", y="Customers", color="#557AA8", height=280,
-            )
-        else:
-            st.info("No strategies yet.")
-    st.subheader("Recent activity")
-    activity = records(dashboard.get("recent_activity"))
-    if activity:
-        st.dataframe(
-            [{"Customer": item.get("customer_name", ""), "Activity": human(item.get("event_type")),
-              "Time": item.get("created_at", ""), "Evaluation": item.get("run_id") or "—"}
-             for item in activity],
-            use_container_width=True, hide_index=True,
-        )
-    else:
-        st.info("No activity yet. Open Review customer to create the first evaluation.")
-    with st.expander("Review scores"):
-        render_evaluation_summary()
-    if st.button("Refresh overview"):
-        st.rerun()
-
-
 def main() -> None:
     st.set_page_config(page_title="Telecom engagement review", page_icon="✉", layout="wide")
     style_path = Path(__file__).with_name("styles.css")
@@ -485,19 +399,19 @@ def main() -> None:
         st.session_state["customer_picker"] = navigation["customer_id"]
         st.session_state["previous_customer_id"] = navigation["customer_id"]
         st.session_state["active_run_id"] = navigation["run_id"]
+        st.session_state["customer_scope"] = navigation.get("scope", "All customers")
+    if st.session_state.get("workspace_page") == "Overview":
+        st.session_state["workspace_page"] = "Review customer"
     with st.sidebar:
         st.title("Telecom")
         st.caption("Synthetic data · Mock delivery")
-        page = st.radio("Workspace", ["Overview", "Review customer", "Add profile", "Policies"], label_visibility="collapsed", key="workspace_page")
+        page = st.radio("Workspace", ["Review customer", "Add profile", "Policies"], label_visibility="collapsed", key="workspace_page")
     if page == "Policies":
         from ui.policy_dashboard import render_policy_dashboard
         try:
             render_policy_dashboard(get_service())
         except ServiceError as exc:
             st.error(str(exc))
-        return
-    if page == "Overview":
-        render_overview()
         return
     if page == "Add profile":
         render_add_profile()
@@ -519,7 +433,26 @@ def main() -> None:
 
     by_id = {customer["id"]: customer for customer in customers}
     with st.sidebar:
-        customer_id = st.selectbox("Synthetic customer", list(by_id), format_func=lambda key: by_id[key].get("name", key), key="customer_picker")
+        scope = st.radio("Customer selection", ["Ready for demo", "All customers"], key="customer_scope")
+        try:
+            examples = records(get_service().demo_customers())
+        except ServiceError as exc:
+            examples = []
+            st.warning(str(exc))
+        demo_labels = {item["id"]: item.get("demo_case", "") for item in examples}
+        options = [item["id"] for item in examples if item["id"] in by_id] if scope == "Ready for demo" else list(by_id)
+        if scope == "Ready for demo":
+            st.caption("Eligible now with no recorded outreach. All customers includes refusal cases and completed deliveries.")
+            if not options:
+                st.info("No uncontacted demo examples are currently eligible. Showing all customers.")
+                options = list(by_id)
+            current = st.session_state.get("customer_picker")
+            if current in by_id and st.session_state.get("active_run_id") and current not in options:
+                options.insert(0, current)
+        if st.session_state.get("customer_picker") not in options:
+            st.session_state["customer_picker"] = options[0]
+        customer_id = st.selectbox("Customer", options,
+            format_func=lambda key: customer_name(by_id[key].get("name", key)) + (" · " + demo_labels[key] if key in demo_labels else ""), key="customer_picker")
         customer = by_id[customer_id]
         st.caption(human(customer.get("scenario")))
         if st.session_state.get("previous_customer_id") != customer_id:
@@ -536,7 +469,7 @@ def main() -> None:
         selected = st.selectbox(
             "Saved evaluations", options,
             index=options.index(active_id) if active_id in options else 0,
-            format_func=lambda key: "Select an evaluation" if not key else f"{STATE_LABELS.get(available_runs[key].get('state'), human(available_runs[key].get('state')))} / {str(available_runs[key].get('created_at', ''))[:19]}",
+            format_func=lambda key: "Select an evaluation" if not key else f"{state_label(available_runs[key])} / {ist_time(available_runs[key].get('created_at'))}",
             key=f"history-{customer_id}-{active_id or 'none'}",
         )
         if selected != (active_id or ""):
@@ -563,7 +496,7 @@ def main() -> None:
     if not isinstance(customer, dict) or customer.get("id") != customer_id:
         st.error("The selected customer's details are unavailable. Refresh to try again.")
         return
-    st.header(customer.get("name", "Synthetic customer"))
+    st.header(customer_name(customer.get("name")))
     st.caption(customer.get("email", ""))
     context = customer.get("context") or {}
     st.caption(f"{context.get('plan_code') or 'Unknown plan'} · " +
@@ -583,19 +516,35 @@ def main() -> None:
         st.error("Choose an evaluation for this customer.")
         return
     state = run.get("state", "")
-    label = STATE_LABELS.get(state, human(state))
+    label = state_label(run)
+    completed = (run.get("strategy") or {}).get("reason_code") in {"outreach_completed", "duplicate_outreach"}
     blockers = list(dict.fromkeys(reasons(run.get("blocked_reasons")) +
                                  reasons((run.get("strategy") or {}).get("blocked_reasons"))))
-    if state in {"held", "validation_failed", "rejected"}:
+    if completed:
+        st.info("Previously delivered · Repeat outreach prevented")
+    elif state in {"held", "validation_failed", "rejected"}:
         st.warning(label + (" · " + " ".join(blockers) if blockers else ""))
     elif state == "delivered":
         st.success(label)
     else:
         st.info(label)
-    if blockers and state not in {"held", "validation_failed", "rejected"}:
+    if blockers and not completed and state not in {"held", "validation_failed", "rejected"}:
         st.warning(" ".join(blockers))
+    next_time = (run.get("strategy") or {}).get("next_eligible_at")
+    if state == "delivered":
+        reopened = [item for item in records(run.get("audit")) if item.get("event_type") == "completed_outreach_reopened"]
+        if reopened:
+            next_time = (reopened[-1].get("details") or {}).get("next_eligible_at")
+        st.caption("Completed mock output and its original approval are preserved. No new delivery is created by evaluating again.")
+    if next_time:
+        st.caption("Next timing check: " + ist_time(next_time) + ". Fresh evidence, consent and approval are still required.")
+    if state in TERMINAL_STATES and examples:
+        next_example = next((item for item in examples if item["id"] != customer_id), None)
+        if next_example and st.button("Choose another eligible customer"):
+            st.session_state["pending_navigation"] = {"customer_id": next_example["id"], "run_id": None, "scope": "Ready for demo"}
+            st.rerun()
     snapshot_version = (run.get("snapshot") or {}).get("customer_version")
-    if snapshot_version is not None and snapshot_version != customer.get("version"):
+    if state != "delivered" and snapshot_version is not None and snapshot_version != customer.get("version"):
         st.warning("Customer details changed. Evaluate again before continuing.")
 
     decision, message, audit = st.tabs(["Decision", "Draft & review", "Activity"])

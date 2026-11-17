@@ -1,0 +1,115 @@
+{
+  "as_of": "2026-11-17T09:13:07.971321+00:00",
+  "customers": 5001,
+  "before": {
+    "hold": 2803,
+    "offer_or_reward": 970,
+    "billing_reminder": 399,
+    "no_outreach": 501,
+    "appreciation_without_offer": 328
+  },
+  "after": {
+    "no_outreach": 703,
+    "offer_or_reward": 970,
+    "hold": 2201,
+    "billing_reminder": 799,
+    "appreciation_without_offer": 328
+  },
+  "after_reason_codes": {
+    "outreach_completed": 202,
+    "eligible_approved_offer": 970,
+    "reminder_not_due": 201,
+    "verified_overdue_invoice": 799,
+    "contact_permission_not_allowed": 600,
+    "evidence_or_policy_hold": 600,
+    "segment_evidence_incomplete": 200,
+    "known_outage_hold": 200,
+    "no_eligible_outreach": 501,
+    "offer_eligibility_unknown": 200,
+    "contact_frequency_limit": 200,
+    "consistent_customer_appreciation": 328
+  },
+  "changes": [
+    {
+      "scenario": "loyalty_offer",
+      "before": "hold",
+      "after": "no_outreach",
+      "count": 1
+    },
+    {
+      "scenario": "appreciation",
+      "before": "hold",
+      "after": "no_outreach",
+      "count": 1
+    },
+    {
+      "scenario": "billing_stage2",
+      "before": "hold",
+      "after": "billing_reminder",
+      "count": 200
+    },
+    {
+      "scenario": "billing_stage3",
+      "before": "hold",
+      "after": "billing_reminder",
+      "count": 200
+    },
+    {
+      "scenario": "duplicate_action_hold",
+      "before": "hold",
+      "after": "no_outreach",
+      "count": 200
+    }
+  ],
+  "method": "Read-only evaluation of 5,001 PostgreSQL customer snapshots frozen at the same as_of before and after the code change; no model calls.",
+  "saved_before": {
+    "evaluated": 1998,
+    "held": 2405,
+    "no_outreach": 600,
+    "delivered": 3,
+    "rejected": 1,
+    "drafted": 1
+  },
+  "latest_saved_before": {
+    "evaluated": 1995,
+    "held": 2402,
+    "no_outreach": 600,
+    "delivered": 2,
+    "drafted": 1,
+    "rejected": 1
+  },
+  "saved_hold_reasons_before": {
+    "marketing_permission_not_allowed": 400,
+    "billing_permission_not_allowed": 200,
+    "source_stale": 200,
+    "known_outage": 200,
+    "contact_frequency": 200,
+    "segment_evidence_incomplete": 200,
+    "open_dispute": 200,
+    "missing_invoices": 200,
+    "unknown_redemption_history": 200,
+    "reminder_min_interval": 200,
+    "duplicate_outreach": 203,
+    "policy_changed": 2
+  },
+  "benchmark_hashes_unchanged": true,
+  "tests": {
+    "passed": 485,
+    "skipped": 0,
+    "paid_model_calls": 0,
+    "postgresql_concurrency": "competing runs and same-revision retry in disposable schemas",
+    "note": "Final full suite after the concurrent removal of the Reminders editor; an earlier 486-test pass included its subsequently removed UI-save test."
+  },
+  "live_verification": {
+    "ready_customer": "00003",
+    "reopened_original_delivery": "00001",
+    "billing_permission_refusal": "00011",
+    "customer_profiles_changed": 0,
+    "delivery_count_before": 3,
+    "delivery_count_after": 3,
+    "revision_count_before": 5,
+    "revision_count_after": 5,
+    "review_count_before": 4,
+    "review_count_after": 4
+  }
+}

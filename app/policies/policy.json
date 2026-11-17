@@ -14,5 +14,22 @@
   },
   "offer": {
     "channel": "email"
-  }
+  },
+  "reminders": [
+    {
+      "min_overdue_days": 1,
+      "min_gap_days": 7,
+      "tone": "courteous"
+    },
+    {
+      "min_overdue_days": 8,
+      "min_gap_days": 7,
+      "tone": "direct"
+    },
+    {
+      "min_overdue_days": 15,
+      "min_gap_days": 7,
+      "tone": "firm"
+    }
+  ]
 }

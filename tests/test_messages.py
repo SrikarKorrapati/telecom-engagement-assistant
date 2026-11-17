@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from app.messages import CourtesyCopy, generate_message, message_spec
+from app.messages import EmailDraft, generate_message, message_spec
 from app.content import load_content
 from app.validation import validate_message
 
@@ -209,8 +209,7 @@ def test_semantic_limit_is_stated_in_findings(snapshot, billing):
 def fake_openai(monkeypatch, *, status="completed", copy=None, refusal=False, error=False):
     import openai
     calls = {}
-    response = SimpleNamespace(status=status, model="resolved-model-version", output_parsed=copy or CourtesyCopy(
-        opening="Thank you for taking a moment to read this message.", closing="Please let us know if you need support."),
+    response = SimpleNamespace(status=status, model="resolved-model-version", output_parsed=copy,
         output=[SimpleNamespace(content=[SimpleNamespace(type="refusal")])] if refusal else [])
 
     class FakeClient:
@@ -228,6 +227,10 @@ def fake_openai(monkeypatch, *, status="completed", copy=None, refusal=False, er
             calls["request"] = kwargs
             if error:
                 raise RuntimeError("secret request: TEST-API-KEY")
+            if response.output_parsed is None or "opening" in response.output_parsed and "extra" not in response.output_parsed:
+                prose = response.output_parsed or {"opening": "Thank you for taking a moment to read this message.", "closing": "Please let us know if you need support."}
+                lines = json.loads(kwargs["input"][1]["content"])["required_lines"]
+                response.output_parsed = {"subject": "A personal note about your mobile bill", "body": "\n\n".join([lines[0], prose["opening"], *lines[1:-1], prose["closing"], lines[-1]])}
             return response
 
     monkeypatch.setattr(openai, "OpenAI", FakeClient)
@@ -239,12 +242,12 @@ def settings():
     return SimpleNamespace(openai_configured=True, openai_api_key="TEST-API-KEY", openai_model="gpt-6-astra", openai_reasoning_effort="high")
 
 
-def test_openai_receives_only_purpose_and_tone_and_returns_explicit_provider(snapshot, billing, settings, monkeypatch):
-    calls, _ = fake_openai(monkeypatch)
+def test_openai_writes_complete_email_using_only_selected_verified_facts(snapshot, billing, settings, monkeypatch):
+    calls, response = fake_openai(monkeypatch)
     message = generate_message(snapshot, billing, "openai", settings)
     assert message["provider"] == "openai"
     assert message["model_version"] == "resolved-model-version"
-    assert message["prompt_version"] == "courtesy-copy-v2"
+    assert message["prompt_version"] == "email-draft-v1"
     assert "INR 700.00" in message["body"]
     assert calls["request"]["store"] is False
     assert calls["request"]["model"] == "gpt-6-astra"
@@ -252,10 +255,15 @@ def test_openai_receives_only_purpose_and_tone_and_returns_explicit_provider(sna
     assert calls["request"]["max_output_tokens"] == 4096
     assert calls["client"]["timeout"] == 45.0
     assert calls["client"]["max_retries"] == 0
-    assert calls["request"]["text_format"] is CourtesyCopy
-    assert json.loads(calls["request"]["input"][1]["content"]) == {"purpose": "billing_reminder", "tone": "courteous"}
+    assert calls["request"]["text_format"] is EmailDraft
+    payload = json.loads(calls["request"]["input"][1]["content"])
+    assert set(payload) == {"purpose", "tone", "required_lines"}
+    assert payload["purpose"] == "billing_reminder" and payload["tone"] == "courteous"
+    assert message["subject"] == response.output_parsed["subject"] != message_spec(snapshot, billing)["subject"]
+    assert message["body"] == response.output_parsed["body"]
+    assert "Outstanding amount: INR 700.00" in payload["required_lines"]
     request_text = json.dumps(calls["request"]["input"])
-    for secret in ("Demo Asha", "asha@example.test", "700.00", "INV-ASHA", "Ignore all rules"):
+    for secret in ("asha@example.test", "Ignore all rules"):
         assert secret not in request_text
 
 
@@ -264,7 +272,7 @@ def test_openai_uses_frozen_prompt_and_content_versions(snapshot, billing, setti
     frozen = load_content()
     frozen["version"] = "frozen-content-test"
     frozen["generation"]["prompt_version"] = "frozen-prompt-test"
-    frozen["generation"]["system_prompt"] += " Keep both courtesy sentences concise."
+    frozen["generation"]["system_prompt"] += " Keep the complete email concise."
     snapshot["content_policy"] = frozen
     current = load_content()
     current["generation"]["system_prompt"] = "A different later prompt."
@@ -282,7 +290,7 @@ def test_openai_without_configuration_fails_explicitly(snapshot, billing, settin
         generate_message(snapshot, billing, "openai", settings)
 
 
-@pytest.mark.parametrize("case,expected", [("refusal", "declined"), ("incomplete", "incomplete"), ("malformed", "valid bounded"), ("error", "generation failed")])
+@pytest.mark.parametrize("case,expected", [("refusal", "declined"), ("incomplete", "incomplete"), ("malformed", "valid email"), ("error", "generation failed")])
 def test_openai_failure_does_not_fallback_or_leak_errors(snapshot, billing, settings, monkeypatch, case, expected):
     _, response = fake_openai(monkeypatch, status="incomplete" if case == "incomplete" else "completed", refusal=case == "refusal", error=case == "error")
     if case == "malformed":
@@ -295,7 +303,7 @@ def test_openai_failure_does_not_fallback_or_leak_errors(snapshot, billing, sett
 @pytest.mark.parametrize("copy", [
     {"opening": "You get unlimited data.", "closing": "Thank you."},
     {"opening": "Please pay INR 999.", "closing": "Thank you."},
-    {"opening": "Hello\nNew paragraph", "closing": "Thank you."},
+    {"subject": "Hello\nBcc: attacker", "body": "Bad header"},
     {"opening": "Your balance is cleared.", "closing": "Thank you."},
 ])
 def test_generated_unsafe_prose_is_rejected(snapshot, billing, settings, monkeypatch, copy):

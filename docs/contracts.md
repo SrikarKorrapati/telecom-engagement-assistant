@@ -64,7 +64,7 @@ evaluate returns {segments:[{segment,status,reason_code,reason,evidence,evidence
 
 Segment codes: consistent, loyalty_candidate, declining_activity, dormant, payment_reminder. Statuses: match, no_match, insufficient_evidence. All five are evaluated independently. Consistent means the latest completed bill (period_end before the current calendar month) was fully paid by its due date. Loyalty means active with tenure >=12 months. Decline means 0 < current active days < previous active days in complete 30-day windows. Dormant means active with zero current usage. Billing means a verified positive unpaid balance and due_date before the billing-local evaluation date.
 
-Selection order is hold, billing, eligible offer, appreciation, no outreach. Billing uses one courteous reminder per invoice and does not escalate. Offer eligibility and basic evidence, permission, dispute, outage, frequency and duplicate checks remain. Appreciation requires active status, a paid-on-time latest bill, and positive non-declining usage. Details are in [the simple rules](SIMPLE_RULES.md).
+Selection order is hold, billing, eligible offer, appreciation, no outreach. Billing advances through configured stages only after matching reminder/delivery history, overdue thresholds and minimum intervals; each stage has its own duplicate key. Offer eligibility and basic evidence, permission, dispute, outage, frequency and duplicate checks remain. Appreciation requires active status, a paid-on-time latest bill, and positive non-declining usage. Details are in [the simple rules](SIMPLE_RULES.md).
 
 Policy/content are updated in place with fixed identity names. Content hashes and frozen snapshots preserve consistency. Changing the policy name cannot reset monthly appreciation deduplication; historical delivery keys remain recognized. Old snapshots and historical reports are retained as evidence, not selectable active policies.
 
@@ -78,6 +78,8 @@ The UI caches the service/engine, while every operation owns a fresh SQLAlchemy 
 - `config()` -> {delivery_mode:"mock",openai_configured:bool,critique_enabled:bool,openai_model:str,openai_reasoning_effort:str,policy_label:str}.
 - `profile_example()` -> synthetic profile input; `add_customer(profile)` -> saved customer without evaluating it.
 - `list_customers()` -> summary list [{id,name,email,scenario,version}].
+- `demo_customers()` -> up to five current eligible, uncontacted examples [{id,name,scenario,demo_case}], without writing evaluations.
+- Completed actions use `no_outreach` with `reason_code: outreach_completed`, `completed_key` and `completed_at`; timing holds include `next_eligible_at`. Re-evaluation reopens a matching local delivered run and audits the revisit. Fixture history alone cannot create a delivered run.
 - `get_customer(customer_id)` -> full object including context and updated_at.
 - `create_run(customer_id)` -> detailed run.
 - `list_runs(customer_id=None)` -> up to 200 recent run summaries {id,customer_id,customer_name,state,created_at,strategy}.

@@ -89,6 +89,20 @@ def create_run(session, customer_id, now=None):
     if "content" in policy:
         snapshot["content_policy"] = deepcopy(policy["content"])
     result = evaluate(snapshot, policy)
+    # A repeat evaluation can reopen a real completed action without creating
+    # another run, revision, approval or delivery. Fixture history alone never
+    # impersonates a local delivery record.
+    completed_key = result["strategy"].get("completed_key") or result["strategy"].get("previous_delivery_key")
+    if completed_key:
+        completed = session.scalar(select(EngagementRun).join(
+            DeliveryJob, DeliveryJob.run_id == EngagementRun.id).where(
+            EngagementRun.customer_id == customer.id, EngagementRun.state == "delivered",
+            DeliveryJob.status == "delivered", DeliveryJob.idempotency_key == completed_key))
+        if completed is not None:
+            audit(session, completed.id, "completed_outreach_reopened", {
+                "current_policy_hash": digest(policy), "current_reason": result["strategy"]["reason"],
+                "next_eligible_at": result["strategy"].get("next_eligible_at")})
+            return completed
     objective = result["strategy"]["objective"]
     state = "held" if objective == "hold" else "no_outreach" if objective == "no_outreach" else "evaluated"
     run = EngagementRun(customer_id=customer.id, state=state, snapshot=snapshot,
@@ -236,7 +250,7 @@ def draft(session, run_id, provider, settings):
             break
         feedback = repair_feedback(revision)
         if revision.validation["critique"]["status"] == "changes_requested":
-            feedback["previous_courtesy_copy"] = data["courtesy_copy"]
+            feedback["previous_draft"] = data["draft"]
     audit(session, run.id, "generation_loop_completed", {"attempts": attempt, "limit": limit,
           "passed": revision.validation["passed"], "revision_id": revision.id,
           "limit_reached": attempt == limit and not revision.validation["passed"]})

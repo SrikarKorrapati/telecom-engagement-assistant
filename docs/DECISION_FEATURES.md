@@ -19,7 +19,7 @@ The allowed fields supply these feature groups:
 | Offer eligibility | `plan_code`; catalogue ID/code/version/active flag; plan list, expiry, channel, redemption period; title/value/terms presence | Chooses only an approved, valid offer. Catalogue wording is a verified generation input; it is not invented by the model. |
 | Redemption history | Offer code and redemption timestamp | Prevents repeat eligibility within the example redemption interval. |
 | Contact permission | `permissions.billing`, `permissions.marketing` | Requires explicit permission for the selected purpose. Unknown is not treated as allowed. |
-| Reminder history | Invoice ID, prior stage, sent timestamp | Prevents a second reminder for the same invoice; there is no escalation. |
+| Reminder history | Invoice ID, prior stage, sent timestamp | Matches delivery evidence to consecutive stages, validates timing, and prevents repeats of each invoice/stage. |
 | Delivery history | Prior delivery timestamp and idempotency key | Applies the contact-frequency cap and logical duplicate suppression. |
 
 The snapshot's billing timezone is controlled by the approved policy configuration. Context window-start/end dates provide provenance and are checked by dataset validation; the current segment implementation uses completeness, observed-day counts, and active-day counts. Extending live integrations requires stronger event/window lineage validation.

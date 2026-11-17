@@ -46,7 +46,9 @@ def test_render_shows_sections_without_mutation(setup):
     tables = [entry[1][0] for entry in ui.outputs if entry[0] == "dataframe"]
     assert len(tables) == 1 and len(tables[0]) == len(snapshot["offers"])
     assert any(entry[0] == "markdown" and "| Consistent |" in str(entry) and "| Overdue bill |" in str(entry) for entry in ui.outputs)
-    assert "Save rules" in ui.buttons and "Save language rules" in ui.buttons
+    assert "Save rules" in ui.buttons
+    assert "Save language rules" not in ui.buttons and "Save message" not in ui.buttons
+    assert "Save reminder progression" not in ui.buttons
 
 
 def test_rule_save_uses_original_hash_and_preserves_other_rules(setup):
@@ -71,20 +73,6 @@ def test_conflict_is_visible_without_success_notice(setup):
     assert any(entry[0] == "error" and "Refresh" in str(entry) for entry in ui.outputs)
 
 
-def test_message_save_targets_selected_billing_stage(setup):
-    ui, service, snapshot = setup
-    ui.press = "Save message"
-    ui.choices = {"Message purpose": "billing_reminder",
-                  "Subject": "Please review your bill"}
-    with pytest.raises(Rerun):
-        dashboard._content(service, snapshot)
-    payload = service.save_configuration.call_args.kwargs
-    assert payload["section"] == "content" and payload["expected_hash"] == "content-hash"
-    templates = payload["document"]["templates"]
-    assert templates["billing_reminder"]["stages"]["1"]["subject"] == "Please review your bill"
-    assert templates["offer_or_reward"] == snapshot["content"]["templates"]["offer_or_reward"]
-
-
 def test_offer_save_sends_catalogue_hash_and_selected_version(setup):
     ui, service, snapshot = setup
     source = snapshot["offers"][1]
@@ -96,6 +84,7 @@ def test_offer_save_sends_catalogue_hash_and_selected_version(setup):
     assert payload["expected_hash"] == "catalog-hash" and payload["offer_id"] == source["id"]
     assert payload["details"]["terms"] == "Revised synthetic offer terms."
     assert payload["details"]["synthetic"] is True and payload["active"] is True
+    assert payload["details"]["expires_at"] == source["details"]["expires_at"]
 
 
 def test_refresh_discards_forms_without_saving(setup):
@@ -123,3 +112,15 @@ def test_offer_status_checks_expiry_and_enabled_flag(setup):
     _, _, snapshot = setup
     now = datetime(2026, 11, 17, 6, 30, tzinfo=timezone.utc)
     assert [dashboard.offer_status(offer, now) for offer in snapshot["offers"]] == ["Expired", "Available", "Inactive"]
+
+
+def test_offer_expiry_entered_in_ist_is_saved_as_same_utc_instant(setup):
+    from datetime import date, time
+    ui, service, snapshot = setup
+    source = snapshot["offers"][1]
+    ui.press = "Save new offer version"
+    ui.choices = {"Offer version": source["id"], "Expiry date · IST": date(2027, 2, 16),
+                  "Expiry time · IST": time(0, 15)}
+    with pytest.raises(Rerun):
+        dashboard._offers(service, snapshot)
+    assert service.save_offer.call_args.kwargs["details"]["expires_at"] == "2027-02-15T18:45:00+00:00"

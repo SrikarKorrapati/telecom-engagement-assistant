@@ -7,6 +7,7 @@ import pytest
 from app.service import EngagementService, ServiceError
 from ui import dataset_dashboard as dataset
 from ui import streamlit_app as reviewer
+from test_critique import exchange  # Scripted AI responses; never calls the network.
 
 def bind_service(monkeypatch, **methods):
     service = Mock(spec=EngagementService)
@@ -93,7 +94,7 @@ def test_configured_critic_blocks_legacy_revision_without_assessment(monkeypatch
     assert ui.buttons['Approve exact revision']['disabled']
     assert not ui.buttons['Run AI critique']['disabled']
 
-@pytest.mark.parametrize('button,method,identifier,payload', [('Run AI critique', 'critique', 'm1', {}), ('Regenerate with critique', 'draft', 'r1', {'provider': 'openai'})])
+@pytest.mark.parametrize('button,method,identifier,payload', [('Run AI critique', 'critique', 'm1', {}), ('Regenerate email', 'draft', 'r1', {'provider': 'openai'})])
 def test_critic_controls_are_explicit_mutations(monkeypatch, demo, button, method, identifier, payload):
     ui = FakeStreamlit(press=button)
     request = Mock(return_value=demo['run'])
@@ -113,24 +114,18 @@ def test_critic_findings_and_attempt_are_visible_and_block_approval(monkeypatch,
     assert any(('Unsupported pressure' in str(item) for item in ui.outputs))
     assert any(('attempt 3 of 3' in str(item) for item in ui.outputs))
 
-@pytest.mark.parametrize('page', ['Overview', 'Review customer'])
-def test_render_is_read_only_and_summary_customer_is_supported(monkeypatch, demo, page):
-    ui = FakeStreamlit(choices={'Workspace': page})
+def test_render_is_read_only_and_summary_customer_is_supported(monkeypatch, demo):
+    ui = FakeStreamlit()
     ui.session_state.update(previous_customer_id='c1', active_run_id='r1')
     service = bind_service(monkeypatch, config=demo['config'], list_customers=[demo['summary']], get_customer=demo['customer'], list_runs=[demo['run']], get_run=demo['run'], dashboard=demo['dashboard'], evaluation_summary={'human': {'reviews': 0, 'scored_reviews': 0, 'mean_scores': {}}, 'automated': {'reviews': 0, 'scored_reviews': 0, 'mean_scores': {}}, 'unscored_reviews': 0})
     for name in ('add_customer', 'create_run', 'draft', 'edit', 'critique', 'review', 'deliver', 'simulate'):
         getattr(service, name).side_effect = AssertionError('Rendering must not mutate data')
     monkeypatch.setattr(reviewer, 'st', ui)
     reviewer.main()
-    if page == 'Overview':
-        service.get_customer.assert_not_called()
-        service.list_runs.assert_not_called()
-        assert sum((item[0] == 'bar_chart' for item in ui.outputs)) == 2
-        assert sum((item[0] == 'metric' for item in ui.outputs)) == 6
-    else:
-        service.get_customer.assert_called_once_with('c1')
-        service.list_runs.assert_called_once_with('c1')
-        assert ui.buttons['Run final checks and mock deliver']['disabled']
+    service.get_customer.assert_called_once_with('c1')
+    service.list_runs.assert_called_once_with('c1')
+    service.dashboard.assert_not_called()
+    assert ui.buttons['Run final checks and mock deliver']['disabled']
 
 @pytest.mark.parametrize('state, passed, approve_disabled, deliver_disabled', [('drafted', True, False, True), ('validation_failed', False, True, True), ('approved', True, True, False)])
 def test_review_buttons_obey_state_and_validation(monkeypatch, demo, state, passed, approve_disabled, deliver_disabled):
@@ -179,14 +174,16 @@ def test_download_requires_actual_matching_delivery_record(monkeypatch, demo, de
 
 def test_dashboard_failure_is_recoverable(monkeypatch):
     ui = FakeStreamlit()
-    monkeypatch.setattr(reviewer, 'st', ui)
-    bind_service(monkeypatch, dashboard=Mock(side_effect=ServiceError('Database unavailable', 'unavailable')))
-    reviewer.render_overview()
+    monkeypatch.setattr(dataset, 'st', ui)
+    service = Mock(spec=EngagementService)
+    service.dashboard.side_effect = ServiceError('Database unavailable', 'unavailable')
+    monkeypatch.setattr(dataset, 'get_service', lambda: service)
+    dataset.render_overview()
     assert 'Retry dashboard' in ui.buttons
 
-@pytest.mark.parametrize('choices,expected_provider', [({}, 'openai'), ({'Draft provider': 'template'}, 'template')])
-def test_configured_model_is_default_and_template_remains_explicit(monkeypatch, demo, choices, expected_provider):
-    ui = FakeStreamlit(press='Generate draft', choices=choices)
+def test_ai_draft_is_the_only_generation_option(monkeypatch, demo):
+    ui = FakeStreamlit(press='Generate email')
+    ui.selectbox = Mock(side_effect=AssertionError('No provider selector should be shown'))
     request = Mock(return_value=demo['run'])
     bind_service(monkeypatch, draft=request)
     monkeypatch.setattr(reviewer, 'st', ui)
@@ -194,7 +191,8 @@ def test_configured_model_is_default_and_template_remains_explicit(monkeypatch, 
     run = {**demo['run'], 'state': 'evaluated', 'revisions': [], 'latest_revision_id': None}
     with pytest.raises(Rerun):
         reviewer.render_message(run, config)
-    request.assert_called_once_with('r1', provider=expected_provider)
+    request.assert_called_once_with('r1', provider='openai')
+    ui.selectbox.assert_not_called()
 
 def test_unknown_invoice_and_usage_evidence_never_becomes_zero():
     assert dataset.invoice_totals(None, date(2026, 11, 17)) == (None, None)
@@ -215,25 +213,46 @@ def test_dataset_load_preserves_unknowns_and_customer_joins(dataset_content):
     assert len(dataset.filtered_rows(frame, 'invoices_missing', 'billing_reminder', 'All')) == 0
     assert len(dataset.filtered_rows(frame, 'All', 'All', 'All', frame.iloc[0].customer_id)) == 1
 
-def test_real_dataset_charts_serialize_without_max_rows_error(monkeypatch, dataset_content):
+def test_dataset_page_shows_live_overview_and_customer(monkeypatch, dataset_content, demo):
+    ui = FakeStreamlit(choices={'Search customers': 'Customer 00003'})
+    monkeypatch.setattr(dataset, 'st', ui)
+    monkeypatch.setattr(dataset, 'load_data', lambda: dataset_content)
+    service = Mock(spec=EngagementService)
+    service.dashboard.return_value = demo['dashboard']
+    monkeypatch.setattr(dataset, 'get_service', lambda: service)
+    dataset.main()
+    assert service.mock_calls == [('dashboard', (), {})]
+    assert sum(item[0] == 'bar_chart' for item in ui.outputs) == 2
+    assert sum(item[0] == 'metric' for item in ui.outputs) == 6
+    tables = [item[1][0] for item in ui.outputs if item[0] == 'dataframe']
+    assert len(tables) == 1 and len(tables[0]) == 1
+    assert list(tables[0].columns) == ['Customer', 'Plan', 'Stored strategy']
+    assert tables[0].iloc[0]['Customer'] == 'Customer 00003'
+    assert not any(item[0] == 'altair_chart' for item in ui.outputs)
+    assert any(item[0] == 'subheader' and 'Customer 00003' in str(item) for item in ui.outputs)
+
+
+def test_zero_result_dataset_search_is_safe(monkeypatch, dataset_content):
+    ui = FakeStreamlit(choices={'Search customers': 'no-such-customer'})
+    monkeypatch.setattr(dataset, 'st', ui)
+    monkeypatch.setattr(dataset, 'load_data', lambda: dataset_content)
+    service = Mock(spec=EngagementService)
+    service.dashboard.side_effect = ServiceError('Database unavailable', 'unavailable')
+    monkeypatch.setattr(dataset, 'get_service', lambda: service)
+    dataset.main()
+    assert not any(item[0] == 'dataframe' for item in ui.outputs)
+    assert any('No customers match' in str(item) for item in ui.outputs)
+
+
+def test_customer_details_keep_missing_usage_and_balance_unknown(monkeypatch):
     ui = FakeStreamlit()
     monkeypatch.setattr(dataset, 'st', ui)
-    monkeypatch.setattr(dataset, 'load_data', lambda: dataset_content)
-    dataset.main()
-    charts = [item for item in ui.outputs if item[0] == 'altair_chart']
-    assert len(charts) == 6
-    assert any(('Segments overlap' in str(item) for item in ui.outputs))
-
-def test_zero_result_dataset_filters_are_safe(monkeypatch, dataset_content):
-    ui = FakeStreamlit(choices={'Scenario': 'invoices_missing', 'Expected strategy': 'billing_reminder'})
-    monkeypatch.setattr(dataset, 'st', ui)
-    monkeypatch.setattr(dataset, 'load_data', lambda: dataset_content)
-    dataset.main()
-    assert not any((item[0] == 'altair_chart' for item in ui.outputs))
-    assert any(('No customers match' in str(item) for item in ui.outputs))
+    dataset.show_customer({'name': 'Test', 'context': {}}, {}, {})
+    assert any('**Recent activity:** Unknown' in str(item) for item in ui.outputs)
+    assert any('**Outstanding balance:** Unknown' in str(item) for item in ui.outputs)
 
 @pytest.fixture
-def direct_service(monkeypatch):
+def direct_service(monkeypatch, exchange):
     """Exercise actual service transactions through the UI without any HTTP server."""
     from app.config import Settings
     from app.db import initialize_database, make_engine, make_session_factory
@@ -243,7 +262,7 @@ def direct_service(monkeypatch):
     with make_session_factory(engine).begin() as session:
         seed_demo(session)
     try:
-        with EngagementService(Settings('sqlite:///:memory:'), engine) as service:
+        with EngagementService(Settings('sqlite:///:memory:', openai_api_key='TEST-KEY', openai_model='test-model'), engine) as service:
             spy = Mock(spec=EngagementService, wraps=service)
             monkeypatch.setattr(reviewer, 'get_service', lambda: spy)
             yield (service, spy)
@@ -256,19 +275,19 @@ def click_reviewer(ui, button):
         reviewer.main()
     ui.press = None
 
-def test_direct_service_reviewer_template_edit_approve_deliver_flow(monkeypatch, direct_service):
+def test_direct_service_reviewer_ai_edit_approve_deliver_flow(monkeypatch, direct_service):
     from app.seed import demo_id
     client, spy = direct_service
     customer_id = demo_id('customer:loyalty')
-    ui = FakeStreamlit(choices={'Workspace': 'Review customer', 'Synthetic customer': customer_id, 'Draft provider': 'template'})
+    ui = FakeStreamlit(choices={'Workspace': 'Review customer', 'Customer': customer_id})
     monkeypatch.setattr(reviewer, 'st', ui)
     click_reviewer(ui, 'Evaluate customer')
     run_id = ui.session_state['active_run_id']
     assert client.get_run(run_id)['state'] == 'evaluated'
-    click_reviewer(ui, 'Generate draft')
+    click_reviewer(ui, 'Generate email')
     draft = client.get_run(run_id)
     assert draft['state'] == 'drafted'
-    assert draft['revisions'][0]['provider'] == 'template'
+    assert draft['revisions'][0]['provider'] == 'openai'
     old_revision_id = draft['latest_revision_id']
     click_reviewer(ui, 'Approve exact revision')
     assert client.get_run(run_id)['state'] == 'approved'
@@ -290,16 +309,16 @@ def test_direct_service_reviewer_template_edit_approve_deliver_flow(monkeypatch,
     spy.list_runs.assert_called_with(customer_id)
     assert all((call.args == (customer_id,) for call in spy.list_runs.call_args_list))
     assert sum((getattr(spy, name).call_count for name in ('create_run', 'draft', 'review', 'edit', 'deliver'))) == 6
-    assert client.config()['openai_configured'] is False
+    assert client.config()['openai_configured'] is True
 
 @pytest.mark.parametrize('customer_key,event', [('billing', 'payment'), ('loyalty', 'opt_out'), ('billing', 'dispute')])
 def test_direct_service_synthetic_changes_block_stale_approved_delivery(monkeypatch, direct_service, customer_key, event):
     from app.seed import demo_id
     client, _ = direct_service
     customer_id = demo_id('customer:' + customer_key)
-    ui = FakeStreamlit(choices={'Workspace': 'Review customer', 'Synthetic customer': customer_id, 'Event': event, 'Draft provider': 'template'})
+    ui = FakeStreamlit(choices={'Workspace': 'Review customer', 'Synthetic customer': customer_id, 'Event': event})
     monkeypatch.setattr(reviewer, 'st', ui)
-    for button in ('Evaluate customer', 'Generate draft', 'Approve exact revision', 'Apply synthetic event'):
+    for button in ('Evaluate customer', 'Generate email', 'Approve exact revision', 'Apply synthetic event'):
         click_reviewer(ui, button)
     run_id = ui.session_state['active_run_id']
     assert client.get_run(run_id)['state'] == 'approved'
@@ -350,7 +369,7 @@ def test_add_profile_save_and_evaluation_are_separate_explicit_actions(monkeypat
     monkeypatch.setattr(reviewer, 'st', ui)
     with pytest.raises(Rerun):
         reviewer.render_add_profile()
-    service.add_customer.assert_called_once_with(example)
+    service.add_customer.assert_called_once_with({**example, 'name': 'Person'})
     service.create_run.assert_not_called()
     assert ui.session_state['created_profile']['id'] == 'new-profile'
     assert 'active_run_id' not in ui.session_state
@@ -370,15 +389,6 @@ def test_add_profile_invalid_json_never_calls_service_save(monkeypatch):
     service.profile_example.assert_called_once_with()
     service.add_customer.assert_not_called()
     assert any(('JSON object' in str(item) for item in ui.outputs))
-
-def test_review_summary_does_not_present_automated_scores_as_human(monkeypatch):
-    summary = {'human': {'reviews': 2, 'scored_reviews': 0, 'mean_scores': {}}, 'automated': {'reviews': 5, 'scored_reviews': 5, 'mean_scores': {key: 4.0 for key in reviewer.RUBRIC}}, 'unscored_reviews': 2}
-    ui = FakeStreamlit()
-    monkeypatch.setattr(reviewer, 'st', ui)
-    bind_service(monkeypatch, evaluation_summary=summary)
-    reviewer.render_evaluation_summary()
-    assert any(('No human-scored reviews yet' in str(item) for item in ui.outputs))
-    assert sum((item[0] == 'dataframe' for item in ui.outputs)) == 1
 
 def test_review_history_separates_human_automated_and_unspecified(monkeypatch, demo):
     ui = FakeStreamlit()
@@ -437,11 +447,11 @@ def test_direct_service_profile_invalid_context_has_actionable_field_error(monke
 def test_direct_service_human_rubric_is_saved_and_separate_from_automated(monkeypatch, direct_service):
     from app.seed import demo_id
     client, _ = direct_service
-    choices = {'Workspace': 'Review customer', 'Synthetic customer': demo_id('customer:loyalty'), 'Draft provider': 'template', 'Score message usefulness': True}
+    choices = {'Workspace': 'Review customer', 'Synthetic customer': demo_id('customer:loyalty'), 'Score message usefulness': True}
     choices.update({name: 4 for name in reviewer.RUBRIC.values()})
     ui = FakeStreamlit(choices=choices)
     monkeypatch.setattr(reviewer, 'st', ui)
-    for button in ('Evaluate customer', 'Generate draft', 'Approve exact revision'):
+    for button in ('Evaluate customer', 'Generate email', 'Approve exact revision'):
         click_reviewer(ui, button)
     run_id = ui.session_state['active_run_id']
     run = client.get_run(run_id)
