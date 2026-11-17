@@ -4,7 +4,7 @@ This deployment uses free app hosting and Neon's Free PostgreSQL plan. Neither
 requires a payment card. OpenAI generation uses the existing API account and its
 balance; it is not included in the hosting plan.
 
-1. Create a Neon project on the Free plan. Use PostgreSQL 16 and a region near the
+1. Create a Neon project on the Free plan. Use its default PostgreSQL version and a region near the
    Streamlit host. Copy the direct connection string with TLS (`sslmode=require`).
 2. In Streamlit Community Cloud, deploy this repository's `codex/free-deployment`
    branch, with `streamlit_cloud.py` as the main file and **Python 3.11** selected.

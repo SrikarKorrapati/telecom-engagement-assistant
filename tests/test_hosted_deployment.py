@@ -127,8 +127,9 @@ def test_missing_persistent_file_does_not_reset_existing_policy(tmp_path, monkey
         load_policy()
 
 
-def test_render_legacy_database_scheme_selects_installed_driver():
-    engine = make_engine("postgres://demo:synthetic@localhost/example")
+@pytest.mark.parametrize("scheme", ["postgres", "postgresql"])
+def test_hosted_database_scheme_selects_installed_driver(scheme):
+    engine = make_engine(f"{scheme}://demo:synthetic@localhost/example")
     try:
         assert engine.dialect.name == "postgresql"
         assert engine.dialect.driver == "psycopg2"
