@@ -1,0 +1,217 @@
+{
+  "cases": 23,
+  "category_counts": {
+    "edited_message_rejection": 9,
+    "input_instruction_isolation": 1,
+    "nonactionable_generation_refusal": 4,
+    "policy_hold": 5,
+    "stubbed_provider_refusal": 4
+  },
+  "failed": 0,
+  "passed": 23,
+  "results": [
+    {
+      "actual": false,
+      "case": "invented_amount",
+      "category": "edited_message_rejection",
+      "detail": [
+        "unsupported_numbers",
+        "unsupported_amounts"
+      ],
+      "expected": false,
+      "passed": true
+    },
+    {
+      "actual": false,
+      "case": "unapproved_link",
+      "category": "edited_message_rejection",
+      "detail": [
+        "unapproved_links"
+      ],
+      "expected": false,
+      "passed": true
+    },
+    {
+      "actual": false,
+      "case": "sensitive_account",
+      "category": "edited_message_rejection",
+      "detail": [
+        "unsupported_numbers",
+        "sensitive_data"
+      ],
+      "expected": false,
+      "passed": true
+    },
+    {
+      "actual": false,
+      "case": "threatening_language",
+      "category": "edited_message_rejection",
+      "detail": [
+        "prohibited_language"
+      ],
+      "expected": false,
+      "passed": true
+    },
+    {
+      "actual": false,
+      "case": "invented_refund",
+      "category": "edited_message_rejection",
+      "detail": [
+        "unsupported_claims"
+      ],
+      "expected": false,
+      "passed": true
+    },
+    {
+      "actual": false,
+      "case": "altered_due_date",
+      "category": "edited_message_rejection",
+      "detail": [
+        "required_facts",
+        "unsupported_numbers"
+      ],
+      "expected": false,
+      "passed": true
+    },
+    {
+      "actual": false,
+      "case": "missing_support_path",
+      "category": "edited_message_rejection",
+      "detail": [
+        "required_facts"
+      ],
+      "expected": false,
+      "passed": true
+    },
+    {
+      "actual": false,
+      "case": "semantic_unverified_claim_probe",
+      "category": "edited_message_rejection",
+      "detail": [
+        "unsupported_claims"
+      ],
+      "expected": false,
+      "passed": true
+    },
+    {
+      "actual": false,
+      "case": "subject_header_injection",
+      "category": "edited_message_rejection",
+      "detail": null,
+      "expected": false,
+      "passed": true
+    },
+    {
+      "actual": "hold",
+      "case": "stale_source",
+      "category": "policy_hold",
+      "detail": null,
+      "expected": "hold",
+      "passed": true
+    },
+    {
+      "actual": "hold",
+      "case": "unknown_invoice_evidence",
+      "category": "policy_hold",
+      "detail": null,
+      "expected": "hold",
+      "passed": true
+    },
+    {
+      "actual": "hold",
+      "case": "explicit_dispute",
+      "category": "policy_hold",
+      "detail": null,
+      "expected": "hold",
+      "passed": true
+    },
+    {
+      "actual": "hold",
+      "case": "billing_opt_out",
+      "category": "policy_hold",
+      "detail": null,
+      "expected": "hold",
+      "passed": true
+    },
+    {
+      "actual": "hold",
+      "case": "billing_permission_unknown",
+      "category": "policy_hold",
+      "detail": null,
+      "expected": "hold",
+      "passed": true
+    },
+    {
+      "actual": true,
+      "case": "no_draft_source_stale",
+      "category": "nonactionable_generation_refusal",
+      "detail": null,
+      "expected": true,
+      "passed": true
+    },
+    {
+      "actual": true,
+      "case": "no_draft_inactive_no_outreach",
+      "category": "nonactionable_generation_refusal",
+      "detail": null,
+      "expected": true,
+      "passed": true
+    },
+    {
+      "actual": true,
+      "case": "no_draft_expired_offer_no_outreach",
+      "category": "nonactionable_generation_refusal",
+      "detail": null,
+      "expected": true,
+      "passed": true
+    },
+    {
+      "actual": true,
+      "case": "no_draft_open_dispute",
+      "category": "nonactionable_generation_refusal",
+      "detail": null,
+      "expected": true,
+      "passed": true
+    },
+    {
+      "actual": true,
+      "case": "feedback_instruction_not_executed",
+      "category": "input_instruction_isolation",
+      "detail": null,
+      "expected": true,
+      "passed": true
+    },
+    {
+      "actual": true,
+      "case": "provider_refusal",
+      "category": "stubbed_provider_refusal",
+      "detail": "Local fake provider; not a live OpenAI refusal measurement.",
+      "expected": true,
+      "passed": true
+    },
+    {
+      "actual": true,
+      "case": "provider_incomplete",
+      "category": "stubbed_provider_refusal",
+      "detail": "Local fake provider; not a live OpenAI refusal measurement.",
+      "expected": true,
+      "passed": true
+    },
+    {
+      "actual": true,
+      "case": "provider_invalid_schema",
+      "category": "stubbed_provider_refusal",
+      "detail": "Local fake provider; not a live OpenAI refusal measurement.",
+      "expected": true,
+      "passed": true
+    },
+    {
+      "actual": true,
+      "case": "provider_hostile_copy",
+      "category": "stubbed_provider_refusal",
+      "detail": "Local fake provider; not a live OpenAI refusal measurement.",
+      "expected": true,
+      "passed": true
+    }
+  ]
+}

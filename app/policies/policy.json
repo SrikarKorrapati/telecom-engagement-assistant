@@ -1,0 +1,18 @@
+{
+  "version": "prototype",
+  "label": "Illustrative prototype policies — not approved for production",
+  "example_policy": true,
+  "billing_timezone": "Asia/Kolkata",
+  "max_source_age_hours": 48,
+  "clock_skew_seconds": 300,
+  "segments": {
+    "loyalty_tenure_months": 12,
+    "usage_window_days": 30
+  },
+  "outreach": {
+    "frequency_days": 7
+  },
+  "offer": {
+    "channel": "email"
+  }
+}

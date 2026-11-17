@@ -1,0 +1,58 @@
+[
+  {
+    "active": true,
+    "code": "LOYALTY_2GB",
+    "details": {
+      "channel": "email",
+      "eligible_plans": [
+        "POSTPAID_EXPIRED_499"
+      ],
+      "expires_at": "2026-11-16T06:30:00+00:00",
+      "redemption_days": 90,
+      "synthetic": true,
+      "terms": "Illustrative offer: 2GB for 30 days from activation, once per 90 days. No actual provisioning.",
+      "title": "Synthetic 2GB offer version 1",
+      "value_text": "2GB at no additional cost"
+    },
+    "id": "b226c2f2-bb32-5075-8fa5-fbd6105cd5c8",
+    "version": 1
+  },
+  {
+    "active": true,
+    "code": "LOYALTY_2GB",
+    "details": {
+      "channel": "email",
+      "eligible_plans": [
+        "POSTPAID_499",
+        "POSTPAID_799"
+      ],
+      "expires_at": "2027-02-15T06:30:00+00:00",
+      "redemption_days": 90,
+      "synthetic": true,
+      "terms": "Illustrative offer: 2GB for 30 days from activation, once per 90 days. No actual provisioning.",
+      "title": "Synthetic 2GB offer version 2",
+      "value_text": "2GB at no additional cost"
+    },
+    "id": "a7407da6-60ef-54f1-936b-744bebd265dd",
+    "version": 2
+  },
+  {
+    "active": false,
+    "code": "LOYALTY_2GB",
+    "details": {
+      "channel": "email",
+      "eligible_plans": [
+        "POSTPAID_499",
+        "POSTPAID_799"
+      ],
+      "expires_at": "2027-03-17T06:30:00+00:00",
+      "redemption_days": 90,
+      "synthetic": true,
+      "terms": "Illustrative offer: 2GB for 30 days from activation, once per 90 days. No actual provisioning.",
+      "title": "Synthetic 2GB offer version 3",
+      "value_text": "2GB at no additional cost"
+    },
+    "id": "9f098cfc-c654-5fd1-b472-e8b711a3611d",
+    "version": 3
+  }
+]

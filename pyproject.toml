@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "telecom-engagement-assistant"
+version = "0.1.0"
+description = "Synthetic telecom engagement prototype with deterministic controls and human review"
+requires-python = ">=3.11"
+dependencies = ["pydantic>=2.7,<3", "SQLAlchemy>=2.0,<3", "psycopg2-binary>=2.9,<3", "openai>=2,<4", "python-dotenv>=1,<2", "streamlit>=1.27,<2"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<9"]
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.setuptools.package-data]
+app = ["policies/*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

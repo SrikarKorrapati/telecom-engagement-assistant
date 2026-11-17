@@ -1,0 +1,90 @@
+{
+  "additional_tests": {
+    "boundaries": [
+      "month start",
+      "year start",
+      "leap-year March start",
+      "month end",
+      "UTC/local date handling"
+    ],
+    "boundary_scenario_checks": 125,
+    "negative_checks": [
+      "naive as_of rejected",
+      "impossible invoice balance rejected",
+      "wrong expected segment rejected"
+    ],
+    "pytest_passed": 9
+  },
+  "application_regression": "all records compared",
+  "as_of": "2026-11-17T06:30:00+00:00",
+  "errors": [],
+  "independent_integrity_checks": "completed for every record",
+  "independent_segment_oracle": "hand-implemented published thresholds; no application evaluator calls",
+  "limitations": [
+    "Synthetic scenario-balanced coverage is not a real customer population.",
+    "Expected decisions apply only to prototype-v1 policies at the manifest as_of time.",
+    "Feedback is templated synthetic text, not sentiment training or evaluation ground truth.",
+    "Missing evidence cases are intentional nulls, not corrupted records."
+  ],
+  "matched_segment_count_distribution": {
+    "0": 600,
+    "1": 1800,
+    "2": 2400,
+    "3": 200
+  },
+  "records_checked": 5000,
+  "reproducibility": "passed: all four input/label payload files byte-identical",
+  "scenario_counts": {
+    "appreciation": 200,
+    "billing_decline_overlap": 200,
+    "billing_first": 200,
+    "billing_permission_denied": 200,
+    "billing_recent_hold": 200,
+    "billing_stage2": 200,
+    "billing_stage3": 200,
+    "decline_offer": 200,
+    "dormant_offer": 200,
+    "duplicate_action_hold": 200,
+    "expired_offer_no_outreach": 200,
+    "frequency_cap_hold": 200,
+    "inactive_no_outreach": 200,
+    "invoices_missing": 200,
+    "known_outage": 200,
+    "loyalty_decline_overlap": 200,
+    "loyalty_offer": 200,
+    "marketing_permission_denied": 200,
+    "marketing_permission_missing": 200,
+    "missing_redemption_hold": 200,
+    "not_consistent_no_outreach": 200,
+    "open_dispute": 200,
+    "recent_redemption_appreciation": 200,
+    "source_stale": 200,
+    "usage_incomplete": 200
+  },
+  "segment_status_counts": {
+    "consistent:insufficient_evidence": 400,
+    "consistent:match": 3000,
+    "consistent:no_match": 1600,
+    "declining_activity:insufficient_evidence": 600,
+    "declining_activity:match": 800,
+    "declining_activity:no_match": 3600,
+    "dormant:insufficient_evidence": 600,
+    "dormant:match": 200,
+    "dormant:no_match": 4200,
+    "loyalty_candidate:insufficient_evidence": 400,
+    "loyalty_candidate:match": 1800,
+    "loyalty_candidate:no_match": 2800,
+    "payment_reminder:insufficient_evidence": 400,
+    "payment_reminder:match": 1400,
+    "payment_reminder:no_match": 3200
+  },
+  "status": "passed",
+  "strategy_counts": {
+    "appreciation_without_offer": 400,
+    "billing_reminder": 800,
+    "hold": 2400,
+    "no_outreach": 600,
+    "offer_or_reward": 800
+  },
+  "strategy_labels": "manually authored scenario outcomes, with independent strategy precondition checks"
+}

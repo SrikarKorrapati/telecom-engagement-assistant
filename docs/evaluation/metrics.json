@@ -1,0 +1,1063 @@
+{
+  "adversarial": {
+    "cases": 23,
+    "category_counts": {
+      "edited_message_rejection": 9,
+      "input_instruction_isolation": 1,
+      "nonactionable_generation_refusal": 4,
+      "policy_hold": 5,
+      "stubbed_provider_refusal": 4
+    },
+    "failed": 0,
+    "passed": 23,
+    "results": [
+      {
+        "actual": false,
+        "case": "invented_amount",
+        "category": "edited_message_rejection",
+        "detail": [
+          "unsupported_numbers",
+          "unsupported_amounts"
+        ],
+        "expected": false,
+        "passed": true
+      },
+      {
+        "actual": false,
+        "case": "unapproved_link",
+        "category": "edited_message_rejection",
+        "detail": [
+          "unapproved_links"
+        ],
+        "expected": false,
+        "passed": true
+      },
+      {
+        "actual": false,
+        "case": "sensitive_account",
+        "category": "edited_message_rejection",
+        "detail": [
+          "unsupported_numbers",
+          "sensitive_data"
+        ],
+        "expected": false,
+        "passed": true
+      },
+      {
+        "actual": false,
+        "case": "threatening_language",
+        "category": "edited_message_rejection",
+        "detail": [
+          "prohibited_language"
+        ],
+        "expected": false,
+        "passed": true
+      },
+      {
+        "actual": false,
+        "case": "invented_refund",
+        "category": "edited_message_rejection",
+        "detail": [
+          "unsupported_claims"
+        ],
+        "expected": false,
+        "passed": true
+      },
+      {
+        "actual": false,
+        "case": "altered_due_date",
+        "category": "edited_message_rejection",
+        "detail": [
+          "required_facts",
+          "unsupported_numbers"
+        ],
+        "expected": false,
+        "passed": true
+      },
+      {
+        "actual": false,
+        "case": "missing_support_path",
+        "category": "edited_message_rejection",
+        "detail": [
+          "required_facts"
+        ],
+        "expected": false,
+        "passed": true
+      },
+      {
+        "actual": false,
+        "case": "semantic_unverified_claim_probe",
+        "category": "edited_message_rejection",
+        "detail": [
+          "unsupported_claims"
+        ],
+        "expected": false,
+        "passed": true
+      },
+      {
+        "actual": false,
+        "case": "subject_header_injection",
+        "category": "edited_message_rejection",
+        "detail": null,
+        "expected": false,
+        "passed": true
+      },
+      {
+        "actual": "hold",
+        "case": "stale_source",
+        "category": "policy_hold",
+        "detail": null,
+        "expected": "hold",
+        "passed": true
+      },
+      {
+        "actual": "hold",
+        "case": "unknown_invoice_evidence",
+        "category": "policy_hold",
+        "detail": null,
+        "expected": "hold",
+        "passed": true
+      },
+      {
+        "actual": "hold",
+        "case": "explicit_dispute",
+        "category": "policy_hold",
+        "detail": null,
+        "expected": "hold",
+        "passed": true
+      },
+      {
+        "actual": "hold",
+        "case": "billing_opt_out",
+        "category": "policy_hold",
+        "detail": null,
+        "expected": "hold",
+        "passed": true
+      },
+      {
+        "actual": "hold",
+        "case": "billing_permission_unknown",
+        "category": "policy_hold",
+        "detail": null,
+        "expected": "hold",
+        "passed": true
+      },
+      {
+        "actual": true,
+        "case": "no_draft_source_stale",
+        "category": "nonactionable_generation_refusal",
+        "detail": null,
+        "expected": true,
+        "passed": true
+      },
+      {
+        "actual": true,
+        "case": "no_draft_inactive_no_outreach",
+        "category": "nonactionable_generation_refusal",
+        "detail": null,
+        "expected": true,
+        "passed": true
+      },
+      {
+        "actual": true,
+        "case": "no_draft_expired_offer_no_outreach",
+        "category": "nonactionable_generation_refusal",
+        "detail": null,
+        "expected": true,
+        "passed": true
+      },
+      {
+        "actual": true,
+        "case": "no_draft_open_dispute",
+        "category": "nonactionable_generation_refusal",
+        "detail": null,
+        "expected": true,
+        "passed": true
+      },
+      {
+        "actual": true,
+        "case": "feedback_instruction_not_executed",
+        "category": "input_instruction_isolation",
+        "detail": null,
+        "expected": true,
+        "passed": true
+      },
+      {
+        "actual": true,
+        "case": "provider_refusal",
+        "category": "stubbed_provider_refusal",
+        "detail": "Local fake provider; not a live OpenAI refusal measurement.",
+        "expected": true,
+        "passed": true
+      },
+      {
+        "actual": true,
+        "case": "provider_incomplete",
+        "category": "stubbed_provider_refusal",
+        "detail": "Local fake provider; not a live OpenAI refusal measurement.",
+        "expected": true,
+        "passed": true
+      },
+      {
+        "actual": true,
+        "case": "provider_invalid_schema",
+        "category": "stubbed_provider_refusal",
+        "detail": "Local fake provider; not a live OpenAI refusal measurement.",
+        "expected": true,
+        "passed": true
+      },
+      {
+        "actual": true,
+        "case": "provider_hostile_copy",
+        "category": "stubbed_provider_refusal",
+        "detail": "Local fake provider; not a live OpenAI refusal measurement.",
+        "expected": true,
+        "passed": true
+      }
+    ]
+  },
+  "as_of": "2026-11-17T06:30:00+00:00",
+  "classification": {
+    "all_five_segments_exact": {
+      "agreement": 1.0,
+      "correct": 5000,
+      "total": 5000
+    },
+    "complete_decision_exact": {
+      "agreement": 1.0,
+      "correct": 5000,
+      "definition": "All five segment statuses plus strategy objective, reminder stage, and selected offer ID agree.",
+      "total": 5000
+    },
+    "records": 5000,
+    "segments": {
+      "consistent": {
+        "column_axis": "predicted",
+        "correct": 5000,
+        "counts": [
+          [
+            3000,
+            0,
+            0
+          ],
+          [
+            0,
+            1600,
+            0
+          ],
+          [
+            0,
+            0,
+            400
+          ]
+        ],
+        "exact_agreement": 1.0,
+        "labels": [
+          "match",
+          "no_match",
+          "insufficient_evidence"
+        ],
+        "match_class": {
+          "f1": 1.0,
+          "fn": 0,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tp": 3000
+        },
+        "row_axis": "expected",
+        "total": 5000,
+        "unknown_counts": {
+          "correctly_unknown": 400,
+          "expected": 400,
+          "predicted": 400
+        }
+      },
+      "declining_activity": {
+        "column_axis": "predicted",
+        "correct": 5000,
+        "counts": [
+          [
+            800,
+            0,
+            0
+          ],
+          [
+            0,
+            3600,
+            0
+          ],
+          [
+            0,
+            0,
+            600
+          ]
+        ],
+        "exact_agreement": 1.0,
+        "labels": [
+          "match",
+          "no_match",
+          "insufficient_evidence"
+        ],
+        "match_class": {
+          "f1": 1.0,
+          "fn": 0,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tp": 800
+        },
+        "row_axis": "expected",
+        "total": 5000,
+        "unknown_counts": {
+          "correctly_unknown": 600,
+          "expected": 600,
+          "predicted": 600
+        }
+      },
+      "dormant": {
+        "column_axis": "predicted",
+        "correct": 5000,
+        "counts": [
+          [
+            200,
+            0,
+            0
+          ],
+          [
+            0,
+            4200,
+            0
+          ],
+          [
+            0,
+            0,
+            600
+          ]
+        ],
+        "exact_agreement": 1.0,
+        "labels": [
+          "match",
+          "no_match",
+          "insufficient_evidence"
+        ],
+        "match_class": {
+          "f1": 1.0,
+          "fn": 0,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tp": 200
+        },
+        "row_axis": "expected",
+        "total": 5000,
+        "unknown_counts": {
+          "correctly_unknown": 600,
+          "expected": 600,
+          "predicted": 600
+        }
+      },
+      "loyalty_candidate": {
+        "column_axis": "predicted",
+        "correct": 5000,
+        "counts": [
+          [
+            1800,
+            0,
+            0
+          ],
+          [
+            0,
+            2800,
+            0
+          ],
+          [
+            0,
+            0,
+            400
+          ]
+        ],
+        "exact_agreement": 1.0,
+        "labels": [
+          "match",
+          "no_match",
+          "insufficient_evidence"
+        ],
+        "match_class": {
+          "f1": 1.0,
+          "fn": 0,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tp": 1800
+        },
+        "row_axis": "expected",
+        "total": 5000,
+        "unknown_counts": {
+          "correctly_unknown": 400,
+          "expected": 400,
+          "predicted": 400
+        }
+      },
+      "payment_reminder": {
+        "column_axis": "predicted",
+        "correct": 5000,
+        "counts": [
+          [
+            1400,
+            0,
+            0
+          ],
+          [
+            0,
+            3200,
+            0
+          ],
+          [
+            0,
+            0,
+            400
+          ]
+        ],
+        "exact_agreement": 1.0,
+        "labels": [
+          "match",
+          "no_match",
+          "insufficient_evidence"
+        ],
+        "match_class": {
+          "f1": 1.0,
+          "fn": 0,
+          "fp": 0,
+          "precision": 1.0,
+          "recall": 1.0,
+          "tp": 1400
+        },
+        "row_axis": "expected",
+        "total": 5000,
+        "unknown_counts": {
+          "correctly_unknown": 400,
+          "expected": 400,
+          "predicted": 400
+        }
+      }
+    },
+    "strategy": {
+      "column_axis": "predicted",
+      "correct": 5000,
+      "counts": [
+        [
+          800,
+          0,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          400,
+          0,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          800,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          2400,
+          0
+        ],
+        [
+          0,
+          0,
+          0,
+          0,
+          600
+        ]
+      ],
+      "exact_agreement": 1.0,
+      "labels": [
+        "offer_or_reward",
+        "appreciation_without_offer",
+        "billing_reminder",
+        "hold",
+        "no_outreach"
+      ],
+      "row_axis": "expected",
+      "total": 5000
+    },
+    "wrong_strategy_count": 0
+  },
+  "dataset_sha256": {
+    "customers.jsonl": "ecbe9a5ec37a884e9198d61a471ea81cae352c047a8d764e92d0a639b0c7d9d2",
+    "evaluation_contexts.jsonl": "63b28f90d4188f959bbaa2ce7df46e564c1e763d048367cd32a669528222af54",
+    "expected_labels.jsonl": "63841eba395928729f742439d0bfde83e5530cc0f094f0aa27b77f4213ab27b5",
+    "offers.json": "e302fad0e962811bca2362a9dec8481b554e0c5fbe0ef02aecae865ec881f173"
+  },
+  "evaluation_version": 1,
+  "feature_invariance": {
+    "changed": 0,
+    "context_attributes_changed_together": [
+      "age",
+      "gender",
+      "ethnicity",
+      "religion",
+      "disability",
+      "income",
+      "education",
+      "marital_status"
+    ],
+    "failures": [],
+    "other_changes": [
+      "customer_name",
+      "customer_email",
+      "raw feedback"
+    ],
+    "scope": "Finite bundled perturbation test on synthetic fixtures; not a demographic fairness or causal guarantee.",
+    "tested": 5000,
+    "unchanged": 5000
+  },
+  "implementation_sha256": {
+    "app/content.py": "dc1402f93b452b727b040ee1c36c6204ca39ce04d05a50d8ce307034b3fd5a8d",
+    "app/messages.py": "802de1f7014222e9fc79e97077ad48dabfc86aef779f27b5b08eb512d9222af9",
+    "app/policies/content-v1.json": "e2666dcb20a3ffd65ff9b63e9baeb2d649133bb1ed56518d1252f944c83333b3",
+    "app/policies/prototype-v1.json": "c7ced84ff5cc8be837a72e635dc65e828de7d5e3a4b9f10c4674f5d2ec073a90",
+    "app/policy.py": "c00b29c2e0be14ad8aba5d54fe00d8cf74b34fac2fbd60c5e2732a81ff4da26d",
+    "app/rubric.py": "cde427260273a1e9a3bbd00f1016f417751b9684a0000b8c2594041d91f6c0ba",
+    "app/validation.py": "bb3c302cfb372ee99b36b514de1586363861b70737d02917393967a6e3449d7f",
+    "scripts/evaluate_submission.py": "539ab93bfbac37d261f5d1506a513cc4ebdd970b1fe3e4c5fc0c9eb1b0b443ac"
+  },
+  "live_openai": {
+    "application_validation_passed": 5,
+    "artifact_sha256": "9b7988ea0b2e764f0529a5ff59e86520e680effaf4588d0745d4f7e45823696e",
+    "attempted": 6,
+    "fact_slots_expected": 16,
+    "fact_slots_matched": 16,
+    "findings": [
+      {
+        "content_hash_verified": true,
+        "customer_id": "f9022861-96bd-5a84-bb1f-9256e94ce141",
+        "generated": true,
+        "independent": {
+          "checks": {
+            "bounded_plain_text": true,
+            "no_external_links": true,
+            "no_extra_numeric_claims": true,
+            "no_private_identifiers": true,
+            "offer_not_provisioned": true,
+            "raw_fact_slots_exact": true,
+            "selected_action_preconditions": true,
+            "support_path_present": true
+          },
+          "expected_fact_slots": 0,
+          "matched_fact_slots": 0,
+          "passed": true
+        },
+        "model_version": "gpt-6-astra",
+        "recorded_status": "passed",
+        "scenario": "appreciation",
+        "validation": {
+          "checks": [
+            {
+              "code": "message_shape",
+              "detail": "Subject must be 1–160 characters and body 1–6000 characters.",
+              "passed": true
+            },
+            {
+              "code": "plain_text",
+              "detail": "Use plain text, a single-line subject, and no control characters or HTML.",
+              "passed": true
+            },
+            {
+              "code": "verified_context",
+              "detail": "Required facts are available from the selected snapshot.",
+              "passed": true
+            },
+            {
+              "code": "required_facts",
+              "detail": "Keep the verified greeting, fact lines, support/activation statement and signature exactly once, unchanged.",
+              "passed": true
+            },
+            {
+              "code": "unsupported_numbers",
+              "detail": "Numbers may appear only in the exact verified fact lines.",
+              "passed": true
+            },
+            {
+              "code": "unsupported_amounts",
+              "detail": "Currency claims may appear only in the exact verified fact lines.",
+              "passed": true
+            },
+            {
+              "code": "unsupported_dates",
+              "detail": "Dates and deadlines may appear only in the exact verified fact lines.",
+              "passed": true
+            },
+            {
+              "code": "unapproved_links",
+              "detail": "This prototype has no approved links or email addresses in message content.",
+              "passed": true
+            },
+            {
+              "code": "prohibited_language",
+              "detail": "Threats, shaming, unapproved penalties and service-disconnection claims are prohibited.",
+              "passed": true
+            },
+            {
+              "code": "unsupported_claims",
+              "detail": "Additional unverified benefits, promises, payment-status claims or charges are not permitted.",
+              "passed": true
+            },
+            {
+              "code": "sensitive_data",
+              "detail": "Do not include account/subscription identifiers, contact details, secrets or payment credentials.",
+              "passed": true
+            },
+            {
+              "code": "human_review_required",
+              "detail": "These are conservative heuristic checks, not proof of semantic correctness; a human must review every exact revision.",
+              "passed": true
+            }
+          ],
+          "passed": true
+        }
+      },
+      {
+        "content_hash_verified": true,
+        "customer_id": "33b15421-72d2-5fe9-94aa-cc11502f4c4b",
+        "generated": true,
+        "independent": {
+          "checks": {
+            "bounded_plain_text": true,
+            "no_external_links": true,
+            "no_extra_numeric_claims": true,
+            "no_private_identifiers": true,
+            "offer_not_provisioned": true,
+            "raw_fact_slots_exact": true,
+            "selected_action_preconditions": true,
+            "support_path_present": true
+          },
+          "expected_fact_slots": 5,
+          "matched_fact_slots": 5,
+          "passed": true
+        },
+        "model_version": "gpt-6-astra",
+        "recorded_status": "passed",
+        "scenario": "loyalty_offer",
+        "validation": {
+          "checks": [
+            {
+              "code": "message_shape",
+              "detail": "Subject must be 1–160 characters and body 1–6000 characters.",
+              "passed": true
+            },
+            {
+              "code": "plain_text",
+              "detail": "Use plain text, a single-line subject, and no control characters or HTML.",
+              "passed": true
+            },
+            {
+              "code": "verified_context",
+              "detail": "Required facts are available from the selected snapshot.",
+              "passed": true
+            },
+            {
+              "code": "required_facts",
+              "detail": "Keep the verified greeting, fact lines, support/activation statement and signature exactly once, unchanged.",
+              "passed": true
+            },
+            {
+              "code": "unsupported_numbers",
+              "detail": "Numbers may appear only in the exact verified fact lines.",
+              "passed": true
+            },
+            {
+              "code": "unsupported_amounts",
+              "detail": "Currency claims may appear only in the exact verified fact lines.",
+              "passed": true
+            },
+            {
+              "code": "unsupported_dates",
+              "detail": "Dates and deadlines may appear only in the exact verified fact lines.",
+              "passed": true
+            },
+            {
+              "code": "unapproved_links",
+              "detail": "This prototype has no approved links or email addresses in message content.",
+              "passed": true
+            },
+            {
+              "code": "prohibited_language",
+              "detail": "Threats, shaming, unapproved penalties and service-disconnection claims are prohibited.",
+              "passed": true
+            },
+            {
+              "code": "unsupported_claims",
+              "detail": "Additional unverified benefits, promises, payment-status claims or charges are not permitted.",
+              "passed": true
+            },
+            {
+              "code": "sensitive_data",
+              "detail": "Do not include account/subscription identifiers, contact details, secrets or payment credentials.",
+              "passed": true
+            },
+            {
+              "code": "human_review_required",
+              "detail": "These are conservative heuristic checks, not proof of semantic correctness; a human must review every exact revision.",
+              "passed": true
+            }
+          ],
+          "passed": true
+        }
+      },
+      {
+        "customer_id": "c33fd27c-4c4f-578e-a8e7-c1429920f779",
+        "error": "Generated wording failed validation; no draft was created. Choose template generation or retry.",
+        "generated": false,
+        "recorded_status": "failed",
+        "scenario": "decline_offer"
+      },
+      {
+        "content_hash_verified": true,
+        "customer_id": "702a1f92-e937-5a3e-9f17-828a8cb86eb8",
+        "generated": true,
+        "independent": {
+          "checks": {
+            "bounded_plain_text": true,
+            "no_external_links": true,
+            "no_extra_numeric_claims": true,
+            "no_private_identifiers": true,
+            "offer_not_provisioned": true,
+            "raw_fact_slots_exact": true,
+            "selected_action_preconditions": true,
+            "support_path_present": true
+          },
+          "expected_fact_slots": 5,
+          "matched_fact_slots": 5,
+          "passed": true
+        },
+        "model_version": "gpt-6-astra",
+        "recorded_status": "passed",
+        "scenario": "dormant_offer",
+        "validation": {
+          "checks": [
+            {
+              "code": "message_shape",
+              "detail": "Subject must be 1–160 characters and body 1–6000 characters.",
+              "passed": true
+            },
+            {
+              "code": "plain_text",
+              "detail": "Use plain text, a single-line subject, and no control characters or HTML.",
+              "passed": true
+            },
+            {
+              "code": "verified_context",
+              "detail": "Required facts are available from the selected snapshot.",
+              "passed": true
+            },
+            {
+              "code": "required_facts",
+              "detail": "Keep the verified greeting, fact lines, support/activation statement and signature exactly once, unchanged.",
+              "passed": true
+            },
+            {
+              "code": "unsupported_numbers",
+              "detail": "Numbers may appear only in the exact verified fact lines.",
+              "passed": true
+            },
+            {
+              "code": "unsupported_amounts",
+              "detail": "Currency claims may appear only in the exact verified fact lines.",
+              "passed": true
+            },
+            {
+              "code": "unsupported_dates",
+              "detail": "Dates and deadlines may appear only in the exact verified fact lines.",
+              "passed": true
+            },
+            {
+              "code": "unapproved_links",
+              "detail": "This prototype has no approved links or email addresses in message content.",
+              "passed": true
+            },
+            {
+              "code": "prohibited_language",
+              "detail": "Threats, shaming, unapproved penalties and service-disconnection claims are prohibited.",
+              "passed": true
+            },
+            {
+              "code": "unsupported_claims",
+              "detail": "Additional unverified benefits, promises, payment-status claims or charges are not permitted.",
+              "passed": true
+            },
+            {
+              "code": "sensitive_data",
+              "detail": "Do not include account/subscription identifiers, contact details, secrets or payment credentials.",
+              "passed": true
+            },
+            {
+              "code": "human_review_required",
+              "detail": "These are conservative heuristic checks, not proof of semantic correctness; a human must review every exact revision.",
+              "passed": true
+            }
+          ],
+          "passed": true
+        }
+      },
+      {
+        "content_hash_verified": true,
+        "customer_id": "294d7752-9349-5c64-b10a-4d4a2b7e22f7",
+        "generated": true,
+        "independent": {
+          "checks": {
+            "bounded_plain_text": true,
+            "no_external_links": true,
+            "no_extra_numeric_claims": true,
+            "no_private_identifiers": true,
+            "offer_not_provisioned": true,
+            "raw_fact_slots_exact": true,
+            "selected_action_preconditions": true,
+            "support_path_present": true
+          },
+          "expected_fact_slots": 3,
+          "matched_fact_slots": 3,
+          "passed": true
+        },
+        "model_version": "gpt-6-astra",
+        "recorded_status": "passed",
+        "scenario": "billing_first",
+        "validation": {
+          "checks": [
+            {
+              "code": "message_shape",
+              "detail": "Subject must be 1–160 characters and body 1–6000 characters.",
+              "passed": true
+            },
+            {
+              "code": "plain_text",
+              "detail": "Use plain text, a single-line subject, and no control characters or HTML.",
+              "passed": true
+            },
+            {
+              "code": "verified_context",
+              "detail": "Required facts are available from the selected snapshot.",
+              "passed": true
+            },
+            {
+              "code": "required_facts",
+              "detail": "Keep the verified greeting, fact lines, support/activation statement and signature exactly once, unchanged.",
+              "passed": true
+            },
+            {
+              "code": "unsupported_numbers",
+              "detail": "Numbers may appear only in the exact verified fact lines.",
+              "passed": true
+            },
+            {
+              "code": "unsupported_amounts",
+              "detail": "Currency claims may appear only in the exact verified fact lines.",
+              "passed": true
+            },
+            {
+              "code": "unsupported_dates",
+              "detail": "Dates and deadlines may appear only in the exact verified fact lines.",
+              "passed": true
+            },
+            {
+              "code": "unapproved_links",
+              "detail": "This prototype has no approved links or email addresses in message content.",
+              "passed": true
+            },
+            {
+              "code": "prohibited_language",
+              "detail": "Threats, shaming, unapproved penalties and service-disconnection claims are prohibited.",
+              "passed": true
+            },
+            {
+              "code": "unsupported_claims",
+              "detail": "Additional unverified benefits, promises, payment-status claims or charges are not permitted.",
+              "passed": true
+            },
+            {
+              "code": "sensitive_data",
+              "detail": "Do not include account/subscription identifiers, contact details, secrets or payment credentials.",
+              "passed": true
+            },
+            {
+              "code": "human_review_required",
+              "detail": "These are conservative heuristic checks, not proof of semantic correctness; a human must review every exact revision.",
+              "passed": true
+            }
+          ],
+          "passed": true
+        }
+      },
+      {
+        "content_hash_verified": true,
+        "customer_id": "3fc0284f-cb9e-5f65-acff-07934b5bf705",
+        "generated": true,
+        "independent": {
+          "checks": {
+            "bounded_plain_text": true,
+            "no_external_links": true,
+            "no_extra_numeric_claims": true,
+            "no_private_identifiers": true,
+            "offer_not_provisioned": true,
+            "raw_fact_slots_exact": true,
+            "selected_action_preconditions": true,
+            "support_path_present": true
+          },
+          "expected_fact_slots": 3,
+          "matched_fact_slots": 3,
+          "passed": true
+        },
+        "model_version": "gpt-6-astra",
+        "recorded_status": "passed",
+        "scenario": "billing_stage3",
+        "validation": {
+          "checks": [
+            {
+              "code": "message_shape",
+              "detail": "Subject must be 1–160 characters and body 1–6000 characters.",
+              "passed": true
+            },
+            {
+              "code": "plain_text",
+              "detail": "Use plain text, a single-line subject, and no control characters or HTML.",
+              "passed": true
+            },
+            {
+              "code": "verified_context",
+              "detail": "Required facts are available from the selected snapshot.",
+              "passed": true
+            },
+            {
+              "code": "required_facts",
+              "detail": "Keep the verified greeting, fact lines, support/activation statement and signature exactly once, unchanged.",
+              "passed": true
+            },
+            {
+              "code": "unsupported_numbers",
+              "detail": "Numbers may appear only in the exact verified fact lines.",
+              "passed": true
+            },
+            {
+              "code": "unsupported_amounts",
+              "detail": "Currency claims may appear only in the exact verified fact lines.",
+              "passed": true
+            },
+            {
+              "code": "unsupported_dates",
+              "detail": "Dates and deadlines may appear only in the exact verified fact lines.",
+              "passed": true
+            },
+            {
+              "code": "unapproved_links",
+              "detail": "This prototype has no approved links or email addresses in message content.",
+              "passed": true
+            },
+            {
+              "code": "prohibited_language",
+              "detail": "Threats, shaming, unapproved penalties and service-disconnection claims are prohibited.",
+              "passed": true
+            },
+            {
+              "code": "unsupported_claims",
+              "detail": "Additional unverified benefits, promises, payment-status claims or charges are not permitted.",
+              "passed": true
+            },
+            {
+              "code": "sensitive_data",
+              "detail": "Do not include account/subscription identifiers, contact details, secrets or payment credentials.",
+              "passed": true
+            },
+            {
+              "code": "human_review_required",
+              "detail": "These are conservative heuristic checks, not proof of semantic correctness; a human must review every exact revision.",
+              "passed": true
+            }
+          ],
+          "passed": true
+        }
+      }
+    ],
+    "generated": 5,
+    "generated_at": "2026-11-17T08:14:00.869506+00:00",
+    "independent_checks_passed": 5,
+    "limitation": "Six saved live calls on selected synthetic fixtures; no delivery, independent human study, or population-level quality estimate.",
+    "model_requested": "gpt-6-astra",
+    "provider": "openai",
+    "provider_recorded_passed": 5,
+    "reasoning": "high",
+    "usefulness": {
+      "assessed_count": 5,
+      "assessment_file_sha256": "8404655e3dc778f4605a5e5ae60520179d50bdba7759af6da7fa496b15a79e82",
+      "exact_draft_hashes_verified": 5,
+      "generation_provider": "openai",
+      "human_study_performed": false,
+      "limitation": "Intentionally selected openai drafts assessed by a separate assistant; not blinded human ratings, inter-rater agreement, or a population-level quality estimate.",
+      "mean_scores": {
+        "call_to_action": 3.4,
+        "clarity": 3.6,
+        "personalization": 3.0,
+        "relevance": 4.8,
+        "tone": 4.4
+      },
+      "overall_mean": 3.84,
+      "reviewer_source": "automated",
+      "rubric_version": "usefulness-v1",
+      "sample_count": 5,
+      "scale": {
+        "maximum": 5,
+        "minimum": 1
+      },
+      "status": "separately_assessed"
+    }
+  },
+  "messages": {
+    "application_validation_passed": 2000,
+    "attempted": 2000,
+    "fact_slot_accuracy": 1.0,
+    "fact_slots_expected": 6400,
+    "fact_slots_matched": 6400,
+    "failures": [],
+    "generated": 2000,
+    "independent_checks_passed": 2000,
+    "provider": "template"
+  },
+  "policy_sha256": "b787b0381e8932f6123197f56faed871c87dd2556888ed41657f9698982374b3",
+  "policy_version": "prototype-v1",
+  "synthetic_only": true,
+  "usefulness": {
+    "assessed_count": 6,
+    "assessment_file_sha256": "11d9d24bf10390afa3ef784c5e797a4bb3c9efff137e8511b4f04e9eb535498e",
+    "exact_draft_hashes_verified": 6,
+    "generation_provider": "template",
+    "human_study_performed": false,
+    "limitation": "Intentionally selected template drafts assessed by a separate assistant; not blinded human ratings, inter-rater agreement, or a population-level quality estimate.",
+    "mean_scores": {
+      "call_to_action": 3.167,
+      "clarity": 3.5,
+      "personalization": 2.833,
+      "relevance": 5.0,
+      "tone": 4.5
+    },
+    "overall_mean": 3.8,
+    "reviewer_source": "automated",
+    "rubric_version": "usefulness-v1",
+    "sample_count": 6,
+    "scale": {
+      "maximum": 5,
+      "minimum": 1
+    },
+    "status": "separately_assessed"
+  }
+}

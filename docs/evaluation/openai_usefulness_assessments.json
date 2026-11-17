@@ -1,0 +1,236 @@
+{
+  "schema_version": 1,
+  "rubric_version": "usefulness-v1",
+  "reviewer_source": "automated",
+  "assessor": "Codex assistant review",
+  "assessed_at": "2026-11-17T08:17:50.170230+00:00",
+  "source_file": "docs/evaluation/openai_samples.json",
+  "source_file_sha256": "9b7988ea0b2e764f0529a5ff59e86520e680effaf4588d0745d4f7e45823696e",
+  "source": "live OpenAI",
+  "generation_model": "gpt-6-astra",
+  "generation_reasoning_effort": "high",
+  "generation_method": "Live model-generated courtesy opening and closing, assembled with deterministic subject, greeting, verified facts, action and signature. The assessments cover the full visible assembled messages.",
+  "hash_convention": "SHA-256 of UTF-8 json.dumps({subject: exact_subject, body: exact_body}, sort_keys=True, separators=(comma, colon), ensure_ascii=False). No whitespace or Unicode normalization is applied to either message string. Hashes are recomputed from visible strings; the source report content_hash uses a different JSON serialization and is not copied.",
+  "human_feedback_collected": false,
+  "human_review_count": 0,
+  "attempted_sample_count": 6,
+  "automated_assessment_count": 5,
+  "unscored_sample_count": 1,
+  "rubric_criteria": {
+    "relevance": "Does the message address the selected, evidence-supported objective?",
+    "clarity": "Is the wording understandable and free from ambiguity?",
+    "personalization": "Does it use appropriate verified context without unnecessary personal data?",
+    "call_to_action": "Is the next step clear and proportionate, including no required action for appreciation?",
+    "tone": "Is it respectful and appropriate for the selected objective and reminder stage?"
+  },
+  "rubric_scale": {
+    "1": "Unusable",
+    "2": "Major revision needed",
+    "3": "Acceptable with edits",
+    "4": "Good",
+    "5": "Excellent"
+  },
+  "method": "The assistant read each returned exact subject/body, selected strategy, raw verified customer context and applicable offer before making criterion-level judgments. Validation pass status was not treated as a usefulness score. The failed sample had no visible draft and was excluded from scoring.",
+  "overall_limitations": [
+    "Five successful drafts out of six generation attempts were available for qualitative assessment. The blocked decline_offer attempt remains part of the generation/validation denominator but has no usefulness score.",
+    "This is a single automated assistant assessment, not human feedback, a blinded study or evidence of customer satisfaction; human ratings remain uncollected.",
+    "The model generated bounded courtesy text, while most factual and action content was assembled deterministically. Scores do not isolate the model’s independent factual reasoning or generation capability.",
+    "These selected synthetic examples and the five-success subset do not support claims about real customer prevalence, broad model reliability, or improvement over the six-template cohort.",
+    "No live message was approved or delivered in this source report, and no activation, payment, support journey, conversion or comprehension outcome was observed.",
+    "Missing approved contact routes and customer-facing catalogue wording remain limitations of the full pipeline; invented links, numbers or promises are not acceptable substitutes.",
+    "Each judgment applies only to its exact canonical content hash and historical source context. Edited messages or changed evidence require reassessment."
+  ],
+  "assessments": [
+    {
+      "sample_id": "appreciation:f9022861-96bd-5a84-bb1f-9256e94ce141",
+      "customer_id": "f9022861-96bd-5a84-bb1f-9256e94ce141",
+      "scenario": "appreciation",
+      "as_of": "2026-11-17T06:30:00+00:00",
+      "message_sha256": "4ae594c1b72360ea6412f1926a4732cafe93ee776ada78b155b7fabec0382793",
+      "rubric_version": "usefulness-v1",
+      "reviewer_source": "automated",
+      "assessor": "Codex assistant review",
+      "source": "live OpenAI",
+      "generation_provider": "openai",
+      "generation_model_version": "gpt-6-astra",
+      "generation_reasoning_effort": "high",
+      "generation_prompt_version": "courtesy-copy-v1",
+      "generation_template_version": "telecom-facts-v1",
+      "scores": {
+        "relevance": 4,
+        "clarity": 4,
+        "personalization": 2,
+        "call_to_action": 5,
+        "tone": 4
+      },
+      "rationales": {
+        "relevance": "The subject and required relationship line address appreciation without an offer. However, thanking the customer for time and consideration sounds like a response to a request or proposal that is not present in the supplied context.",
+        "clarity": "The note is brief and understandable, but two consecutive thank-you statements are repetitive and consideration has no clear referent.",
+        "personalization": "Only the greeting is individualized. The verified eight-month relationship does not inform the wording, and the generic wishes could be sent to any customer; adding private billing details would not be appropriate compensation.",
+        "call_to_action": "There is no request to respond, pay or activate anything, which is proportionate for a pure appreciation message. A mandatory action is not needed for this objective.",
+        "tone": "Courteous and positive, but the formal time-and-consideration phrase and all-the-best sign-off feel generic rather than specifically appreciative of an ongoing customer relationship."
+      },
+      "overall_assessment": "An acceptable, low-pressure appreciation note, with generic personalization and a courtesy phrase that is slightly misplaced for the objective.",
+      "overall_limitations": [
+        "No human recipient has judged whether this wording feels sincere or relevant.",
+        "This assessment concerns the visible assembled message, not an observed change in customer engagement."
+      ]
+    },
+    {
+      "sample_id": "loyalty_offer:33b15421-72d2-5fe9-94aa-cc11502f4c4b",
+      "customer_id": "33b15421-72d2-5fe9-94aa-cc11502f4c4b",
+      "scenario": "loyalty_offer",
+      "as_of": "2026-11-17T06:30:00+00:00",
+      "message_sha256": "e5f975ac790113352aa5beb7ca50113c25d2485b5b917fc5c5151a9d7a8a7f7f",
+      "rubric_version": "usefulness-v1",
+      "reviewer_source": "automated",
+      "assessor": "Codex assistant review",
+      "source": "live OpenAI",
+      "generation_provider": "openai",
+      "generation_model_version": "gpt-6-astra",
+      "generation_reasoning_effort": "high",
+      "generation_prompt_version": "courtesy-copy-v1",
+      "generation_template_version": "telecom-facts-v1",
+      "scores": {
+        "relevance": 5,
+        "clarity": 3,
+        "personalization": 2,
+        "call_to_action": 3,
+        "tone": 4
+      },
+      "rationales": {
+        "relevance": "The selected offer and its 2GB benefit, 30-day validity, 90-day restriction and expiry match the active catalogue entry for POSTPAID_499. The stated offer remains unactivated, consistent with the prototype workflow.",
+        "clarity": "The factual block is readable, but the synthetic version title, provisioning terminology and UTC expiry require customer-facing refinement. The pleasant opening provides no bridge into those technical terms.",
+        "personalization": "The name is individualized, but neither the verified 24-month relationship nor other appropriate customer context is reflected. Hoping for a wonderful day does not add customer-specific relevance.",
+        "call_to_action": "The text clearly avoids claiming activation, but asking the customer to discuss the offer through a usual channel supplies neither an approved destination nor concrete request instructions.",
+        "tone": "Friendly and unpressured. The opening and closing are generic niceties, so the message does not particularly recognize loyalty."
+      },
+      "overall_assessment": "A relevant and polite offer message whose live courtesy wording does not resolve the fixed block’s clarity, personalization or CTA weaknesses.",
+      "overall_limitations": [
+        "The synthetic offer cannot be provisioned, and no redemption or support-journey outcome was tested.",
+        "The wording of the factual block and support action comes from deterministic approved content; these weaknesses cannot be attributed solely to model generation."
+      ]
+    },
+    {
+      "sample_id": "dormant_offer:702a1f92-e937-5a3e-9f17-828a8cb86eb8",
+      "customer_id": "702a1f92-e937-5a3e-9f17-828a8cb86eb8",
+      "scenario": "dormant_offer",
+      "as_of": "2026-11-17T06:30:00+00:00",
+      "message_sha256": "c3482755ce6a80dacff8a42118e31a37a8eb2dc057a40bb10637e33274ae6310",
+      "rubric_version": "usefulness-v1",
+      "reviewer_source": "automated",
+      "assessor": "Codex assistant review",
+      "source": "live OpenAI",
+      "generation_provider": "openai",
+      "generation_model_version": "gpt-6-astra",
+      "generation_reasoning_effort": "high",
+      "generation_prompt_version": "courtesy-copy-v1",
+      "generation_template_version": "telecom-facts-v1",
+      "scores": {
+        "relevance": 5,
+        "clarity": 3,
+        "personalization": 2,
+        "call_to_action": 3,
+        "tone": 4
+      },
+      "rationales": {
+        "relevance": "The message presents the selected eligible offer for the active POSTPAID_499 subscription and preserves its exact benefit, terms and expiry. It does not invent a reason for the zero-activity window.",
+        "clarity": "The fact labels aid scanning, but the synthetic version name, no-actual-provisioning wording and UTC expiry remain technical. The general well-wishing adds little explanation.",
+        "personalization": "Aside from the greeting, the copy is generic. It offers no tailored optional help or welcome-back context, while correctly avoiding an unsupported claim that zero observed activity means the customer has left.",
+        "call_to_action": "The offer is explicitly not activated, but the invitation to discuss it through an unspecified usual channel does not provide an actionable approved route.",
+        "tone": "Polite and nonjudgmental about inactivity. The two well-wishing sentences are formulaic and do not make the re-engagement purpose more meaningful."
+      },
+      "overall_assessment": "A factually relevant, respectful offer with little substantive re-engagement tailoring and a vague practical next step.",
+      "overall_limitations": [
+        "Zero active days does not establish dissatisfaction, churn intent, or a need for more data.",
+        "No real customer response or successful reactivation was observed, and fixed content limits the effect of the generated courtesy sentences."
+      ]
+    },
+    {
+      "sample_id": "billing_first:294d7752-9349-5c64-b10a-4d4a2b7e22f7",
+      "customer_id": "294d7752-9349-5c64-b10a-4d4a2b7e22f7",
+      "scenario": "billing_first",
+      "as_of": "2026-11-17T06:30:00+00:00",
+      "message_sha256": "59700124aac6f0d27c86c11ba4bdc83157b635acf1ab9ced993ea7916426e501",
+      "rubric_version": "usefulness-v1",
+      "reviewer_source": "automated",
+      "assessor": "Codex assistant review",
+      "source": "live OpenAI",
+      "generation_provider": "openai",
+      "generation_model_version": "gpt-6-astra",
+      "generation_reasoning_effort": "high",
+      "generation_prompt_version": "courtesy-copy-v1",
+      "generation_template_version": "telecom-facts-v1",
+      "scores": {
+        "relevance": 5,
+        "clarity": 4,
+        "personalization": 5,
+        "call_to_action": 3,
+        "tone": 5
+      },
+      "rationales": {
+        "relevance": "The invoice reference, INR 350 remaining balance and 2026-11-12 due date match the selected partially paid invoice. The message does not incorrectly request the original INR 700 total.",
+        "clarity": "The subject and labeled factual block make the reminder easy to understand. The generic opening and time-and-consideration closing do not add useful billing explanation.",
+        "personalization": "The exact invoice, remaining balance, due date and greeting use the right verified context for this objective without including account, subscription or contact details.",
+        "call_to_action": "Reviewing the balance and raising payment or dispute questions are proportionate, but usual billing channel and usual channel provide no specific approved destination or clear resolution path.",
+        "tone": "Courteous and calm for a first reminder, preserving a support/dispute option and avoiding blame, threats or invented consequences."
+      },
+      "overall_assessment": "A grounded and respectful reminder with good factual personalization; the practical billing/support route remains underspecified.",
+      "overall_limitations": [
+        "Correct invoice facts are supplied by deterministic assembly, so this sample does not establish that the model independently reasoned about payment status.",
+        "The reference-time balance must be checked again before any delivery; no actual payment or support outcome was tested."
+      ]
+    },
+    {
+      "sample_id": "billing_stage3:3fc0284f-cb9e-5f65-acff-07934b5bf705",
+      "customer_id": "3fc0284f-cb9e-5f65-acff-07934b5bf705",
+      "scenario": "billing_stage3",
+      "as_of": "2026-11-17T06:30:00+00:00",
+      "message_sha256": "3c2bb13e57f5c3079390658c9029f305476d70bcd60b3898f5a963bb39f20797",
+      "rubric_version": "usefulness-v1",
+      "reviewer_source": "automated",
+      "assessor": "Codex assistant review",
+      "source": "live OpenAI",
+      "generation_provider": "openai",
+      "generation_model_version": "gpt-6-astra",
+      "generation_reasoning_effort": "high",
+      "generation_prompt_version": "courtesy-copy-v1",
+      "generation_template_version": "telecom-facts-v1",
+      "scores": {
+        "relevance": 5,
+        "clarity": 4,
+        "personalization": 4,
+        "call_to_action": 3,
+        "tone": 5
+      },
+      "rationales": {
+        "relevance": "The INR 1200 balance, invoice identifier and 2026-10-26 due date match the supplied record. Prior reminders on November 1 and 9 support the selected third-stage follow-up at the reference time.",
+        "clarity": "Prompt attention clearly signals follow-up urgency without inventing a deadline, and the factual block is easy to scan. The description billing matter remains general until the invoice lines are read.",
+        "personalization": "The greeting and invoice facts are accurate and pertinent. The text does not explicitly connect the firmer message to the verified earlier reminders, leaving some stage-specific context unused.",
+        "call_to_action": "Prompt attention increases emphasis, but the unchanged usual-channel instruction still does not identify where or how the customer should resolve the balance or dispute it.",
+        "tone": "Appropriately firm and respectful, with a dispute/support option and no unsupported penalties, service threats or shame."
+      },
+      "overall_assessment": "An accurate, appropriately firm follow-up whose generated opening improves emphasis but does not make the fixed CTA operational.",
+      "overall_limitations": [
+        "The snapshot’s reminder history and outstanding balance are historical evidence, not proof the debt remains outstanding at a later delivery time.",
+        "This assessment does not establish collection effectiveness, legal suitability or recipient acceptance."
+      ]
+    }
+  ],
+  "unscored_samples": [
+    {
+      "sample_id": "decline_offer:c33fd27c-4c4f-578e-a8e7-c1429920f779",
+      "customer_id": "c33fd27c-4c4f-578e-a8e7-c1429920f779",
+      "scenario": "decline_offer",
+      "as_of": "2026-11-17T06:30:00+00:00",
+      "source": "live OpenAI",
+      "generation_status": "failed",
+      "status": "unscored_no_visible_draft",
+      "scores": null,
+      "message_sha256": null,
+      "reason": "Generation was reported as blocked by validation and no subject/body was returned in the source report. No message content can be inspected, so usefulness scores are unavailable and are not zero.",
+      "reported_error": "Generated wording failed validation; no draft was created. Choose template generation or retry.",
+      "rubric_version": "usefulness-v1"
+    }
+  ]
+}

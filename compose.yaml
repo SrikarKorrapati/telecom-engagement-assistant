@@ -1,0 +1,22 @@
+# Optional PostgreSQL only. Run Streamlit and its Python service from the local venv.
+# Choose this OR the managed local cluster; both default to localhost:55432.
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: telecom
+      POSTGRES_DB: telecom_demo
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-telecom_local}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-55432}:5432"
+    volumes:
+      - telecom_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U telecom -d telecom_demo"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+    restart: unless-stopped
+
+volumes:
+  telecom_postgres:
