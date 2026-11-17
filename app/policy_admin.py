@@ -21,6 +21,7 @@ from app.content import validate_content
 from app.models import Offer
 from app.policy import _policy
 from app.paths import policy_directory
+from app import configuration_store
 from app.workflow import audit, digest
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -90,10 +91,13 @@ def validate_configuration(policy, content):
         raise PolicyAdminError(str(error)) from None
 
 
-def _documents():
+def _documents(session=None, *, for_update=False):
     try:
-        policy = json.loads(POLICY_PATH.read_text(encoding="utf-8"))
-        content = json.loads(CONTENT_PATH.read_text(encoding="utf-8"))
+        if configuration_store.enabled():
+            policy, content = configuration_store.read_documents(session, for_update=for_update)
+        else:
+            policy = json.loads(POLICY_PATH.read_text(encoding="utf-8"))
+            content = json.loads(CONTENT_PATH.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         raise PolicyAdminError("Policy files could not be loaded.", "unavailable") from None
     validate_configuration(policy, content)
@@ -125,7 +129,7 @@ def _view(session, policy, content):
 
 def configuration(sessions):
     with _lock(shared=True), sessions() as session:
-        return _view(session, *_documents())
+        return _view(session, *_documents(session))
 
 
 def _replace(path, data):
@@ -151,7 +155,7 @@ def save_configuration(sessions, actor, *, section, document, expected_hash):
     # Copy caller-owned input before validation and publication.
     document = deepcopy(document)
     with _lock(), sessions() as session:
-        policy, content = _documents()
+        policy, content = _documents(session, for_update=True)
         current = policy if section == "policy" else content
         if not isinstance(expected_hash, str) or digest(current) != expected_hash:
             raise PolicyAdminError("Configuration changed since this page loaded. Refresh before saving.", "conflict")
@@ -164,13 +168,17 @@ def save_configuration(sessions, actor, *, section, document, expected_hash):
         else:
             content = document
         validate_configuration(policy, content)
-        path = POLICY_PATH if section == "policy" else CONTENT_PATH
-        previous = path.read_bytes()
-        payload = (json.dumps(document, indent=2, ensure_ascii=False) + "\n").encode("utf-8")
         audit(session, None, "configuration_saved", {"section": section, "previous_version": current["version"],
               "version": document["version"], "previous_hash": expected_hash,
               "configuration_hash": digest(document), "document": document}, actor)
         session.flush()
+        if configuration_store.enabled():
+            configuration_store.write_documents(session, policy, content)
+            session.commit()
+            return _view(session, policy, content)
+        path = POLICY_PATH if section == "policy" else CONTENT_PATH
+        previous = path.read_bytes()
+        payload = (json.dumps(document, indent=2, ensure_ascii=False) + "\n").encode("utf-8")
         _replace(path, payload)
         try:
             session.commit()

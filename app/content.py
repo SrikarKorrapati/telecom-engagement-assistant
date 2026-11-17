@@ -5,6 +5,7 @@ import re
 from string import Formatter
 
 from app.paths import policy_directory
+from app import configuration_store
 
 
 RESPECTFUL_TONES = frozenset({"courteous", "warm", "supportive", "neutral", "direct", "firm"})
@@ -68,6 +69,9 @@ def validate_content(content):
 
 
 def load_content():
+    if configuration_store.enabled():
+        _, content = configuration_store.read_documents()
+        return validate_content(content)
     path = policy_directory() / "content.json"
     try:
         return validate_content(json.loads(path.read_text(encoding="utf-8")))

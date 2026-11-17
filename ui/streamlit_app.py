@@ -379,9 +379,11 @@ def render_add_profile() -> None:
             st.rerun()
 
 
-def main() -> None:
+def main(prepare=None) -> None:
     st.set_page_config(page_title="Telecom engagement review", page_icon="✉", layout="wide")
     require_access(st)
+    if prepare is not None:
+        prepare()
     style_path = Path(__file__).with_name("styles.css")
     if style_path.exists():
         # Only developer-authored CSS is rendered as HTML. Customer content never is.

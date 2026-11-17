@@ -22,7 +22,7 @@ PASSWORD = "synthetic-test-password-123456"
 
 @pytest.fixture(autouse=True)
 def access_environment(monkeypatch):
-    for key in ("DEMO_ACCESS_PASSWORD", "REQUIRE_DEMO_LOGIN", "RENDER", "POLICY_DATA_DIR"):
+    for key in ("DEMO_ACCESS_PASSWORD", "REQUIRE_DEMO_LOGIN", "RENDER", "POLICY_DATA_DIR", "POLICY_STORAGE"):
         monkeypatch.delenv(key, raising=False)
     monkeypatch.setattr("app.access.load_dotenv", lambda **kwargs: None)
 

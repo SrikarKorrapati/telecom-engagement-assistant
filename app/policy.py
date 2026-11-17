@@ -11,6 +11,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from app.content import load_content, validate_content
 from app.paths import policy_directory
+from app import configuration_store
 
 SEGMENTS = ("consistent", "loyalty_candidate", "declining_activity", "dormant", "payment_reminder")
 
@@ -33,10 +34,14 @@ class EvidenceError(ValueError):
 
 def load_policy() -> dict:
     try:
-        policy = json.loads((policy_directory() / "policy.json").read_text())
+        if configuration_store.enabled():
+            policy, content = configuration_store.read_documents()
+        else:
+            policy = json.loads((policy_directory() / "policy.json").read_text())
+            content = load_content()
         if not isinstance(policy, dict):
             raise ValueError("Policy configuration must be an object.")
-        policy["content"] = load_content()
+        policy["content"] = validate_content(content)
         _policy(policy)
         return policy
     except (OSError, json.JSONDecodeError) as error:
