@@ -16,8 +16,8 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from app import workflow
 from app.config import Settings
 from app.db import make_engine, make_session_factory
-from app.models import Customer, EngagementRun, MessageRevision, Review, DeliveryJob, AuditEvent
-from app.policy import load_policy
+from app.models import Customer, EngagementRun, MessageRevision, Review, DeliveryJob, AuditEvent, utcnow
+from app.policy import evaluate, load_policy
 from app.profiles import ProfileInput, example_profile
 from app.rubric import CRITERIA, SCALE, validate_scores, summarize_reviews
 
@@ -220,6 +220,40 @@ class EngagementService:
         with self._session() as session:
             return [dict(result._mapping) for result in session.execute(select(Customer.id, Customer.name,
                 Customer.email, Customer.scenario, Customer.version).order_by(Customer.name))]
+
+    def demo_customers(self):
+        """Read-only, fresh examples; scenario labels never decide eligibility."""
+        try:
+            policy = load_policy()
+        except ValueError:
+            raise ServiceError("Policy/content configuration is invalid.", "unavailable") from None
+        with self._session() as session:
+            contacted = set(session.scalars(select(EngagementRun.customer_id).join(
+                DeliveryJob, DeliveryJob.run_id == EngagementRun.id).where(DeliveryJob.status == "delivered")))
+            examples, now = {}, utcnow()
+            for customer in session.scalars(select(Customer).order_by(Customer.name)):
+                context = customer.context
+                if (customer.id in contacted or context.get("fixture_delivery_history")
+                        or context.get("reminder_history")):
+                    continue
+                result = evaluate(workflow.snapshot_for(session, customer, now), policy)
+                objective = result["strategy"]["objective"]
+                matches = {item["segment"] for item in result["segments"] if item["status"] == "match"}
+                if objective == "billing_reminder":
+                    category = "Overdue bill"
+                elif objective == "appreciation_without_offer":
+                    category = "Consistent customer"
+                elif objective == "offer_or_reward":
+                    category = ("Dormant customer" if "dormant" in matches else
+                                "Declining activity" if "declining_activity" in matches else "Loyalty offer")
+                else:
+                    continue
+                if category not in examples:
+                    examples[category] = {"id": customer.id, "name": customer.name,
+                        "scenario": customer.scenario, "demo_case": category}
+                if len(examples) == 5:
+                    break
+            return list(examples.values())
 
     def get_customer(self, customer_id):
         customer_id = identity(customer_id)

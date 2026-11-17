@@ -79,7 +79,7 @@ def test_policy_is_explicitly_illustrative_and_loaded_fresh():
     first["segments"]["loyalty_tenure_months"] = 99
     assert load_policy()["segments"]["loyalty_tenure_months"] == expected
     assert set(first["segments"]) == {"loyalty_tenure_months", "usage_window_days"}
-    assert "reminders" not in first
+    assert len(first["reminders"]) == 3
 
 
 def test_all_segments_evaluated_independently_and_billing_has_priority(snapshot):
@@ -385,7 +385,7 @@ def test_appreciation_stays_deduplicated_across_old_policy_names(snapshot, old_n
         "idempotency_key": f"CUSTOMER-1:marketing:appreciation:{old_name}:2026-11",
     }]
     result = evaluate(snapshot)
-    assert result["strategy"]["reason_code"] == "duplicate_outreach"
+    assert result["strategy"]["reason_code"] == "outreach_completed"
 
 
 def test_legacy_billing_delivery_is_not_repeated_when_reminder_history_is_empty(snapshot):
@@ -394,15 +394,16 @@ def test_legacy_billing_delivery_is_not_repeated_when_reminder_history_is_empty(
         "created_at": iso(NOW - timedelta(days=10)), "purpose": "billing",
         "idempotency_key": f"CUSTOMER-1:billing:{invoice['id']}:3",
     }]
-    assert evaluate(snapshot)["strategy"]["reason_code"] == "duplicate_outreach"
+    assert evaluate(snapshot)["strategy"]["reason_code"] == "reminder_history_unknown"
 
 
 def test_same_logical_offer_cannot_be_redelivered_after_cap_window(snapshot):
     key = evaluate(snapshot)["strategy"]["idempotency_key"]
     snapshot["recent_deliveries"] = [{"created_at": iso(NOW - timedelta(days=30)), "purpose": "marketing", "idempotency_key": key}]
     result = evaluate(snapshot)
-    assert result["strategy"]["objective"] == "hold"
-    assert result["strategy"]["reason_code"] == "duplicate_outreach"
+    assert result["strategy"]["objective"] == "no_outreach"
+    assert result["strategy"]["reason_code"] == "outreach_completed"
+    assert result["strategy"]["idempotency_key"] is None
 
 
 @pytest.mark.parametrize("history", [None, [{}], [{"created_at": "invalid", "idempotency_key": "x"}]])
@@ -421,12 +422,12 @@ def test_first_reminder_is_courteous_regardless_of_age(snapshot, days):
 
 
 @pytest.mark.parametrize("previous_stage,gap", [(1, 3), (1, 8), (2, 15), (3, 30)])
-def test_recorded_reminder_blocks_repeat_even_after_contact_interval(snapshot, previous_stage, gap):
+def test_unverified_or_incomplete_reminder_history_blocks_progression(snapshot, previous_stage, gap):
     invoice = overdue(snapshot, days=40)
     snapshot["context"]["reminder_history"] = [{"invoice_id": invoice["id"], "stage": previous_stage, "sent_at": iso(NOW - timedelta(days=gap))}]
     result = evaluate(snapshot)
     assert result["strategy"]["objective"] == "hold"
-    assert "already sent" in result["strategy"]["reason"]
+    assert result["strategy"]["reason_code"] == "reminder_history_unknown"
 
 
 def test_reminder_history_for_another_invoice_does_not_escalate(snapshot):

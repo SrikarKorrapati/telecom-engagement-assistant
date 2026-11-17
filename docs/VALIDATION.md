@@ -4,7 +4,19 @@ The implemented prototype covers FR-01 through FR-10 with deterministic classifi
 
 See [the submission evaluation](EVALUATION_REPORT.md) for measured classification/confusion results, 2,000 template checks, the six-call Astra sample, separately labelled automated usefulness judgments, and known limitations. Profile input, configurable content, frozen configuration, and five-criterion review scoring are now implemented.
 
-## Current direct-service validation
+## Current simple-policy validation
+
+The policy now uses one completed bill for consistency, active tenure for loyalty, any positive usage decline, zero usage for dormancy, and one courteous reminder per unpaid overdue invoice. Policy/content update in place; there is no manual version bump. See [Simple rules](SIMPLE_RULES.md).
+
+- **461 tests passed**, with PostgreSQL concurrency and migration tests enabled and no skips.
+- Tests verify same-name changes block stale draft/edit/critique/approval/delivery actions, frozen snapshots remain unchanged, outdated saves are rejected, failed audit commits restore the file, and settings saves wait for in-progress service actions.
+- Legacy appreciation and billing delivery keys still prevent duplicates after policy changes.
+- An isolated PostgreSQL smoke exercised all five outcomes. Offer, billing and appreciation completed template drafting, automated test approval, mock delivery and idempotent retries. There were no model calls or changes to demo rows; the temporary schema was removed.
+- Actual Streamlit scripts for Overview, Review customer, Add profile and Policies ran without exceptions. The policy form no longer exposes version, billing-cycle-count or decline-threshold inputs. Reviewer and dataset services were restarted.
+
+Earlier saved dataset expectations and model-quality reports describe the earlier business rules. They remain historical; current regression tests do not relabel those results as measurements of the simple policy.
+
+## Earlier direct-service validation
 
 After removing FastAPI, the reviewer calls `EngagementService` directly. The following checks were rerun on 17 November 2026 against the updated application:
 

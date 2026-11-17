@@ -59,7 +59,7 @@ def critique_message(subject, body, snapshot, strategy, settings):
 
     payload = {
         "purpose": strategy["objective"], "tone": strategy.get("tone"),
-        "verified_message": {"subject": anonymize(spec["subject"]),
+        "verified_message": {
             "required_lines": [anonymize(line) for line in
                                [spec["greeting"], *spec["facts"], spec["action"], spec["signature"]]]},
         "draft": {"subject": anonymize(subject), "body": anonymize(body)},

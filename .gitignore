@@ -13,7 +13,9 @@ __pycache__/
 .coverage
 htmlcov/
 .ppt-build/
+.chart-data-*/
 output/
+outputs/
 *.db
 *.db-shm
 *.db-wal

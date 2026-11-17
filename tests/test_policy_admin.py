@@ -171,7 +171,7 @@ def test_missing_billing_template_and_invalid_patterns_reject_save(client):
     before = client.policy_configuration()
     content = deepcopy(before["content"])
     del content["templates"]["billing_reminder"]["stages"]["1"]
-    with pytest.raises(ServiceError, match="courteous billing reminder template"):
+    with pytest.raises(ServiceError, match="template is required for every configured reminder stage"):
         client.save_configuration(section="content", document=content, expected_hash=before["content_hash"])
     content = deepcopy(before["content"])
     content["validation_patterns"]["prohibited_language"] = ["["]
@@ -228,3 +228,16 @@ def test_invalid_offer_is_rejected_without_new_version(client, field, value):
         client.save_offer(offer_id=source["id"], details=details, active=True, expected_hash=before["catalog_hash"])
     assert error.value.code == "invalid_input"
     assert client.policy_configuration()["catalog_hash"] == before["catalog_hash"]
+
+
+@pytest.mark.parametrize('rules', [[], [{'min_overdue_days': 1, 'min_gap_days': 0, 'tone': 'courteous'}],
+    [{'min_overdue_days': 1, 'min_gap_days': 7, 'tone': 'firm'}],
+    [{'min_overdue_days': 1, 'min_gap_days': 7, 'tone': 'courteous'},
+     {'min_overdue_days': 1, 'min_gap_days': 7, 'tone': 'direct'}]])
+def test_invalid_progression_cannot_be_saved(client, rules):
+    before = client.policy_configuration()
+    document = deepcopy(before['policy'])
+    document['reminders'] = rules
+    with pytest.raises(ServiceError):
+        client.save_configuration(section='policy', document=document, expected_hash=before['policy_hash'])
+    assert client.policy_configuration()['policy_hash'] == before['policy_hash']

@@ -99,14 +99,28 @@ def _policy(policy: dict) -> ZoneInfo:
         zone = ZoneInfo(policy["billing_timezone"])
         _integer(policy["max_source_age_hours"], "max_source_age_hours", 1)
         _integer(policy["clock_skew_seconds"], "clock_skew_seconds")
-        if set(policy["segments"]) != {"loyalty_tenure_months", "usage_window_days"} or "reminders" in policy:
+        if set(policy["segments"]) != {"loyalty_tenure_months", "usage_window_days"}:
             raise EvidenceError("Use only the current simple rule settings")
         for key in ("loyalty_tenure_months", "usage_window_days"):
             _integer(policy["segments"][key], key, 1)
         _integer(policy["outreach"]["frequency_days"], "frequency_days", 1)
         content = validate_content(policy["content"])
-        if "1" not in content["templates"]["billing_reminder"]["stages"]:
-            raise EvidenceError("A courteous billing reminder template is required")
+        reminders = policy["reminders"]
+        if not isinstance(reminders, list) or not 1 <= len(reminders) <= 3:
+            raise EvidenceError("Configure one to three reminder stages")
+        previous_day = 0
+        for stage, rule in enumerate(reminders, 1):
+            if not isinstance(rule, dict) or set(rule) != {"min_overdue_days", "min_gap_days", "tone"}:
+                raise EvidenceError("Reminder stages require overdue days, gap days and tone")
+            day = _integer(rule["min_overdue_days"], "minimum overdue days", 1)
+            _integer(rule["min_gap_days"], "minimum reminder gap days", 1)
+            if day <= previous_day or rule["tone"] not in {"courteous", "direct", "firm"}:
+                raise EvidenceError("Reminder thresholds must increase and tones must be respectful")
+            if stage == 1 and rule["tone"] != "courteous":
+                raise EvidenceError("The first reminder must be courteous")
+            if str(stage) not in content["templates"]["billing_reminder"]["stages"]:
+                raise EvidenceError("A template is required for every configured reminder stage")
+            previous_day = day
         if policy["offer"]["channel"] != "email":
             raise EvidenceError("prototype supports only email")
         return zone
@@ -308,27 +322,92 @@ def _offer(snapshot: dict, policy: dict, now: datetime) -> tuple[dict | None, li
     return None, errors
 
 
-def _reminder(context: dict, invoice: dict, now: datetime) -> tuple[int | None, str | None]:
-    """One courteous reminder per invoice; never escalate or repeat it."""
-    history = context.get("reminder_history")
+def _delivery_history(snapshot: dict, now: datetime) -> list[tuple[str, datetime]]:
+    history = snapshot.get("recent_deliveries")
     if not isinstance(history, list):
-        return None, "Reminder history is missing"
-    already_reminded = False
+        raise EvidenceError("Delivery history is missing")
+    result = []
+    for event in history:
+        if not isinstance(event, dict):
+            raise EvidenceError("Delivery history is malformed")
+        when = _timestamp(event.get("created_at"), "delivery timestamp")
+        key = _text(event.get("idempotency_key"), "delivery idempotency key")
+        if when > now:
+            raise EvidenceError("Delivery history has a future timestamp")
+        result.append((key, when))
+    return result
+
+
+def _completed(key: str, when: datetime, **values) -> dict:
+    return _strategy("no_outreach", "outreach_completed",
+                     "This outreach was already delivered. No repeat message is needed.",
+                     completed_key=key, completed_at=when.isoformat(), **values)
+
+
+def _reminder(snapshot: dict, invoice: dict, now: datetime, policy: dict, zone: ZoneInfo) -> dict:
+    """Advance one stage only, backed by matching, chronological send evidence."""
+    history = snapshot["context"].get("reminder_history")
+    if not isinstance(history, list):
+        return _hold(["Reminder history is missing"], "reminder_history_unknown")
+    prefix = f"{snapshot['customer_id']}:billing:{invoice['id']}:"
+    rules = policy["reminders"]
     try:
+        deliveries = _delivery_history(snapshot, now)
+        recorded = {}
         for item in history:
             if not isinstance(item, dict):
                 raise EvidenceError("Reminder history is malformed")
             identifier = _text(item.get("invoice_id"), "reminder invoice identifier")
-            _integer(item.get("stage"), "recorded reminder stage", 1)
+            stage = _integer(item.get("stage"), "recorded reminder stage", 1)
+            if stage > 3:
+                raise EvidenceError("Reminder history contains an unsupported stage")
             when = _timestamp(item.get("sent_at"), "reminder sent timestamp")
             if when > now:
                 raise EvidenceError("Reminder history has a future send")
-            already_reminded |= identifier == invoice["id"]
+            if identifier == invoice["id"]:
+                if stage in recorded:
+                    raise EvidenceError("Reminder history contains a duplicate stage")
+                recorded[stage] = when
+        stages = sorted(recorded)
+        if stages != list(range(1, len(stages) + 1)):
+            raise EvidenceError("Reminder history must contain consecutive stages starting at one")
+        times = [recorded[stage] for stage in stages]
+        if any(a >= b for a, b in zip(times, times[1:])):
+            raise EvidenceError("Reminder history is not in chronological stage order")
+        if any(when.astimezone(zone).date() <= invoice["due"] for when in times):
+            raise EvidenceError("Reminder history predates the overdue invoice")
+        for stage in stages:
+            if stage <= len(rules):
+                rule = rules[stage - 1]
+                if (recorded[stage].astimezone(zone).date() - invoice["due"]).days < rule["min_overdue_days"]:
+                    raise EvidenceError("A recorded reminder predates its configured overdue threshold")
+                if stage > 1 and recorded[stage] - recorded[stage - 1] < timedelta(days=rule["min_gap_days"]):
+                    raise EvidenceError("Recorded reminders violate the configured minimum interval")
+        expected = {(prefix + str(stage), when) for stage, when in recorded.items()}
+        actual = {(key, when) for key, when in deliveries if key.startswith(prefix)}
+        if expected != actual:
+            raise EvidenceError("Reminder history does not match verified delivery history")
     except EvidenceError as error:
-        return None, str(error)
-    if already_reminded:
-        return None, "A reminder was already sent for this invoice"
-    return 1, None
+        return _hold([str(error)], "reminder_history_unknown")
+    stage = len(stages) + 1
+    previous_key = prefix + str(stage - 1) if stages else None
+    if stage > len(rules):
+        return _completed(previous_key, times[-1], invoice_id=invoice["id"], reminder_stage=stage - 1)
+    rule = rules[stage - 1]
+    earliest = datetime.combine(invoice["due"] + timedelta(days=rule["min_overdue_days"]),
+                                datetime.min.time(), tzinfo=zone).astimezone(timezone.utc)
+    if stages:
+        earliest = max(earliest, times[-1] + timedelta(days=rule["min_gap_days"]))
+    if now < earliest:
+        result = _hold([f"Reminder stage {stage} is not due until {earliest.astimezone(zone).isoformat()}"],
+                       "reminder_not_due")
+        result.update(next_eligible_at=earliest.isoformat(), previous_delivery_key=previous_key,
+                      invoice_id=invoice["id"], reminder_stage=stage)
+        return result
+    return _strategy("billing_reminder", "verified_overdue_invoice",
+                     "A verified overdue invoice takes precedence over discretionary offers.",
+                     purpose="billing", tone=rule["tone"], invoice_id=invoice["id"], reminder_stage=stage,
+                     idempotency_key=prefix + str(stage))
 
 
 def _contact_gate(snapshot: dict, strategy: dict, now: datetime, policy: dict) -> dict:
@@ -336,32 +415,25 @@ def _contact_gate(snapshot: dict, strategy: dict, now: datetime, policy: dict) -
     purpose = strategy["purpose"]
     if not isinstance(permissions, dict) or permissions.get(purpose) != "allowed":
         return _hold([f"Contact permission for {purpose} is not explicitly allowed"], "contact_permission_not_allowed")
-    history = snapshot.get("recent_deliveries")
-    if not isinstance(history, list):
-        return _hold(["Delivery history is missing"], "delivery_history_unknown")
     try:
-        for event in history:
-            if not isinstance(event, dict):
-                raise EvidenceError("Delivery history is malformed")
-            when = _timestamp(event.get("created_at"), "delivery timestamp")
-            key = _text(event.get("idempotency_key"), "delivery idempotency key")
-            if when > now:
-                raise EvidenceError("Delivery history has a future timestamp")
-            if _same_outreach(key, strategy["idempotency_key"], snapshot["customer_id"]):
-                return _hold(["This logical outreach action was already delivered"], "duplicate_outreach")
-            if now - when < timedelta(days=policy["outreach"]["frequency_days"]):
-                return _hold(["The customer contact-frequency limit has not elapsed"], "contact_frequency_limit")
+        history = _delivery_history(snapshot, now)
     except EvidenceError as exc:
         return _hold([str(exc)], "delivery_history_unknown")
+    for key, when in history:
+        if _same_outreach(key, strategy["idempotency_key"], snapshot["customer_id"]):
+            return _completed(key, when, invoice_id=strategy["invoice_id"], reminder_stage=strategy["reminder_stage"])
+    if history:
+        earliest = max(when for _, when in history) + timedelta(days=policy["outreach"]["frequency_days"])
+        if now < earliest:
+            result = _hold(["The customer contact-frequency limit has not elapsed"], "contact_frequency_limit")
+            result["next_eligible_at"] = earliest.isoformat()
+            return result
     return strategy
 
 
 def _same_outreach(recorded_key: str, current_key: str, customer_id: str) -> bool:
     if recorded_key == current_key:
         return True
-    billing_prefix = f"{customer_id}:billing:"
-    if recorded_key.startswith(billing_prefix) and current_key.startswith(billing_prefix):
-        return recorded_key.rsplit(":", 1)[0] == current_key.rsplit(":", 1)[0]
     # Older appreciation keys included the policy version. A settings change
     # must not permit another appreciation for the same customer and month.
     prefix = f"{customer_id}:marketing:appreciation:"
@@ -413,13 +485,10 @@ def evaluate(snapshot: dict, policy: dict | None = None) -> dict:
     today = now.astimezone(zone).date()
     if statuses["payment_reminder"] == "match":
         invoice = sorted((i for i in invoices or [] if i["outstanding"] > 0 and i["due"] < today), key=lambda i: (i["due"], i["id"]))[0]
-        stage, error = _reminder(context, invoice, now)
-        if error:
-            return _finish(segments, _hold([error], "reminder_already_sent_or_unknown"))
-        strategy = _strategy("billing_reminder", "verified_overdue_invoice", "A verified overdue invoice takes precedence over discretionary offers.",
-                             purpose="billing", tone="courteous", invoice_id=invoice["id"], reminder_stage=stage,
-                             idempotency_key=f"{customer_id}:billing:{invoice['id']}:{stage}")
-        return _finish(segments, _contact_gate(snapshot, strategy, now, policy))
+        strategy = _reminder(snapshot, invoice, now, policy, zone)
+        if strategy["objective"] == "billing_reminder":
+            strategy = _contact_gate(snapshot, strategy, now, policy)
+        return _finish(segments, strategy)
     usage = context.get("usage")
     try:
         if not isinstance(usage, dict):
