@@ -15,6 +15,8 @@ def make_engine(url: str) -> Engine:
         url = "postgresql+psycopg2://" + url.split("://", 1)[1]
     parsed = make_url(url)
     options = {"pool_pre_ping": True}
+    if parsed.get_backend_name() == "postgresql":
+        options["connect_args"] = {"connect_timeout": 15}
     if parsed.get_backend_name() == "sqlite":
         options["connect_args"] = {"check_same_thread": False}
         if parsed.database in (None, "", ":memory:"):
