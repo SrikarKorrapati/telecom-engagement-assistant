@@ -27,6 +27,18 @@ longer. Stay within the free plans' database storage, compute and transfer limit
 The seeded evidence is dated; **Add profile** creates a fresh synthetic example
 when older records no longer qualify for outreach.
 
+## Customer dashboard
+
+Create a second Streamlit app from the same branch with
+`streamlit_dashboard_cloud.py` as its main file and **Python 3.11** selected.
+Copy only `DATABASE_URL` and `DEMO_ACCESS_PASSWORD` from the reviewer into the
+dashboard's secrets. Open the reviewer once first to initialize the shared database.
+
+The dashboard reads live counts, segment and strategy charts, and recent activity
+from that database. Customer search browses the bundled 5,000 synthetic records;
+its stored strategy labels are historical sample labels, not current evaluations.
+The dashboard does not initialize or modify the database and needs no OpenAI key.
+
 ## Durable configuration
 
 The cloud entry point forces `POLICY_STORAGE=database`. It adds one optional
@@ -40,8 +52,9 @@ transaction. Readers use the database, so losing the host's local files or
 restarting the app cannot reset saved settings. Initializing again does not
 overwrite them with Git defaults.
 
-Keep one application instance; workflow actions and configuration saves still
-use a host-local shared lock. This shared demo password gate does not establish
+Keep one reviewer instance; workflow actions and configuration saves still
+use a host-local shared lock. The separate read-only dashboard does not perform
+these actions. This shared demo password gate does not establish
 individual reviewer identity. Delivery remains mocked.
 
 ## Validation
